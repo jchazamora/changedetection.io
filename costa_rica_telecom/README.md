@@ -9,7 +9,23 @@ Lista inicial de watches para changedetection.io y un script que los registra po
 **Operador principal: Telecable.** Su watch está en el grupo `Principal`, que el dashboard usa como referencia
 para calcular las diferencias de precio. Para cambiar el principal, mueve otro watch a ese grupo.
 
-## Pasos
+## Inicio rápido (un solo comando)
+
+Con Docker Desktop abierto y Python 3 instalado, desde la carpeta del repo:
+
+- **Windows** (PowerShell):
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File costa_rica_telecom\iniciar.ps1
+  ```
+- **Mac/Linux**:
+  ```bash
+  bash costa_rica_telecom/iniciar.sh
+  ```
+
+El script levanta changedetection.io, lee la API key, registra los watches, instala el dashboard
+y lo abre en `http://localhost:8501`. Se puede volver a correr cuando quieras: no duplica watches.
+
+## Pasos uno por uno
 
 1. **Levantar changedetection.io** desde la raíz del repo, con la zona horaria de Costa Rica.
    En `docker-compose.yml`, descomenta `environment:` y agrega:
