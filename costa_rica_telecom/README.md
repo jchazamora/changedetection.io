@@ -4,6 +4,10 @@ Lista inicial de watches para changedetection.io y un script que los registra po
 
 - `watches.json`: las páginas a vigilar, con título, grupo (tag) y frecuencia de chequeo.
 - `registrar_watches.py`: lee `watches.json` y crea los watches en tu instancia. Solo usa la librería estándar de Python.
+- `dashboard/`: un dashboard en Streamlit para ver los precios de cada página y compararlos con el operador principal.
+
+**Operador principal: Telecable.** Su watch está en el grupo `Principal`, que el dashboard usa como referencia
+para calcular las diferencias de precio. Para cambiar el principal, mueve otro watch a ese grupo.
 
 ## Pasos
 
@@ -45,6 +49,28 @@ Lista inicial de watches para changedetection.io y un script que los registra po
    - Usar *Filters & Triggers* con un selector CSS/XPath para vigilar solo esa sección.
    - Si una página no muestra contenido sin JavaScript, cambiar el fetcher a Chrome/Playwright
      (requiere el servicio `sockpuppetbrowser` de `docker-compose.yml`).
+
+## Dashboard de precios
+
+```bash
+pip install -r costa_rica_telecom/dashboard/requirements.txt
+export CD_URL=http://127.0.0.1:5000
+export CD_API_KEY=tu_api_key
+streamlit run costa_rica_telecom/dashboard/app.py
+```
+
+Se abre en `http://localhost:8501`. La URL y la API key también se pueden escribir en la barra lateral.
+
+Qué muestra:
+- **Resumen por página**: cuántos precios se encontraron, mínimo y máximo, diferencia contra el principal
+  y enlace a la página.
+- **Precio más bajo por página**: gráfico de barras para comparar operadores.
+- **Detalle por página**: cada precio con el texto donde aparece (para saber a qué plan corresponde),
+  los precios que aparecieron o desaparecieron desde la revisión anterior y su evolución en el tiempo.
+
+Los precios se leen del texto que guarda changedetection.io en cada revisión: montos con `₡`, `¢`, `CRC`,
+`$`, `US$` o `USD`. Si una página muestra muchos precios que no son de planes, agrega un filtro CSS/XPath
+al watch para que solo guarde la sección de planes.
 
 ## Agregar más páginas
 

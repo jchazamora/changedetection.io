@@ -2,6 +2,14 @@
   "_descripcion": "Watches del sector telecom de Costa Rica. Las claves que empiezan con '_' son notas y no se envían al API.",
   "watches": [
     {
+      "_nota": "Operador principal: el grupo 'Principal' lo marca como referencia en el dashboard. Cambiar por la página de planes o tarifas.",
+      "url": "https://www.telecablecr.com/",
+      "title": "Telecable - Inicio",
+      "tag": "CR Telecom, Operadores, Principal",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 2}
+    },
+    {
       "_nota": "Regulador. Cambiar por la página exacta de resoluciones, consultas públicas o comunicados.",
       "url": "https://www.sutel.go.cr/",
       "title": "SUTEL - Inicio",
