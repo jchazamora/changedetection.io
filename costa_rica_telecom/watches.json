@@ -1,0 +1,61 @@
+{
+  "_descripcion": "Watches del sector telecom de Costa Rica. Las claves que empiezan con '_' son notas y no se envían al API.",
+  "watches": [
+    {
+      "_nota": "Regulador. Cambiar por la página exacta de resoluciones, consultas públicas o comunicados.",
+      "url": "https://www.sutel.go.cr/",
+      "title": "SUTEL - Inicio",
+      "tag": "CR Telecom, Regulador",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 3}
+    },
+    {
+      "_nota": "Rector del sector. Cambiar por la sección de telecomunicaciones o noticias.",
+      "url": "https://www.micitt.go.cr/",
+      "title": "MICITT - Inicio",
+      "tag": "CR Telecom, Gobierno",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Grupo ICE (sitio corporativo). Útil para comunicados y licitaciones.",
+      "url": "https://www.grupoice.com/",
+      "title": "Grupo ICE - Inicio",
+      "tag": "CR Telecom, Operadores",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Marca comercial del ICE. Cambiar por la página de planes móviles o internet.",
+      "url": "https://www.kolbi.cr/",
+      "title": "Kölbi - Inicio",
+      "tag": "CR Telecom, Operadores",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Cambiar por la página de planes o tarifas.",
+      "url": "https://www.claro.cr/",
+      "title": "Claro Costa Rica - Inicio",
+      "tag": "CR Telecom, Operadores",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Cambiar por la página de planes o tarifas.",
+      "url": "https://www.tigo.cr/",
+      "title": "Tigo Costa Rica - Inicio",
+      "tag": "CR Telecom, Operadores",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Cambiar por la página de planes o tarifas.",
+      "url": "https://www.libertycr.com/",
+      "title": "Liberty Costa Rica - Inicio",
+      "tag": "CR Telecom, Operadores",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    }
+  ]
+}
