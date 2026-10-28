@@ -1,1 +1,3 @@
 .venv/
+# Usuarios y contraseñas del dashboard (ver dashboard/acceso.py)
+**/.streamlit/secrets.toml

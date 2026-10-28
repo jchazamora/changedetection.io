@@ -7,6 +7,8 @@ Dashboard de precios del sector telecom de Costa Rica.
 - Monitoreo: estado de las páginas que vigila changedetection.io (por API) y los precios de sus snapshots.
   Solo aparece si está definida CD_API_KEY: en Streamlit Community Cloud no hay changedetection.io al que conectarse.
 
+Si los Secrets de Streamlit tienen una sección [usuarios], pide usuario y contraseña antes de mostrar nada (ver acceso.py).
+
 Uso, desde esta carpeta para que tome el tema de .streamlit/config.toml:
     export CD_URL=http://127.0.0.1:5000
     export CD_API_KEY=tu_api_key
@@ -16,6 +18,7 @@ Uso, desde esta carpeta para que tome el tema de .streamlit/config.toml:
 import math
 import os
 import re
+import time
 import unicodedata
 from datetime import datetime
 from html import escape
@@ -26,6 +29,7 @@ import pandas as pd
 import requests
 import streamlit as st
 
+import acceso
 import datos
 from precios import extraer_precios
 
@@ -719,6 +723,25 @@ def pagina_monitoreo():
         st.altair_chart(grafico_evolucion(serie, moneda), width='stretch')
 
 
+# --- Ingreso con usuario y contraseña ------------------------------------------------------------
+
+def pedir_ingreso(usuarios):
+    """Formulario de ingreso. Al entrar guarda el usuario en la sesión y vuelve a cargar la página pedida."""
+    _, centro, _ = st.columns([1, 1.4, 1])
+    with centro:
+        encabezado('Precios Telecom CR', 'Ingresa con tu usuario y contraseña.')
+        with st.form('ingreso'):
+            usuario = st.text_input('Usuario', autocomplete='username')
+            clave = st.text_input('Contraseña', type='password', autocomplete='current-password')
+            entrar = st.form_submit_button('Ingresar', type='primary', icon=':material/login:', width='stretch')
+        if entrar:
+            if acceso.credenciales_validas(usuarios, usuario, clave):
+                st.session_state['usuario'] = usuario.strip().lower()
+                st.rerun()
+            time.sleep(1)  # frena los intentos seguidos de adivinar una contraseña
+            st.error('Usuario o contraseña incorrectos.')
+
+
 # --- Navegación ----------------------------------------------------------------------------------
 
 paginas = [
@@ -731,4 +754,21 @@ if os.getenv('CD_API_KEY'):
     paginas.append(
         st.Page(pagina_monitoreo, title='Monitoreo', icon=':material/monitor_heart:', url_path='monitoreo')
     )
+
+# La sesión dura mientras la pestaña siga abierta: al recargar la página se vuelve a pedir el ingreso
+usuarios = acceso.usuarios_configurados()
+if usuarios and st.session_state.get('usuario') not in usuarios:
+    # Con la navegación oculta, el enlace pedido (por ejemplo /planes) se abre después de ingresar
+    st.navigation(paginas, position='hidden')
+    pedir_ingreso(usuarios)
+    st.stop()
+
 st.navigation(paginas, position='top').run()
+
+if usuarios:
+    st.divider()
+    with st.container(horizontal=True, vertical_alignment='center'):
+        st.caption(f"Sesión iniciada como **{st.session_state['usuario']}**")
+        if st.button('Cerrar sesión', type='tertiary', icon=':material/logout:'):
+            del st.session_state['usuario']
+            st.rerun()

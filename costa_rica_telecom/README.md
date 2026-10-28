@@ -114,16 +114,29 @@ Para abrir *Precios* y *Planes por operador* desde cualquier lugar, sin que la l
 2. Repositorio `jchazamora/changedetection.io`, rama `claude/practical-wright-lfqe2x`, archivo
    `costa_rica_telecom/dashboard/app.py`.
 3. En *Advanced settings*, elige Python 3.12 (el mismo con el que se probó).
-4. El repo es público, así que la app nace pública. En *Settings → Sharing*, elige *Only specific people can
-   view this app* e invita los correos que quieras.
+4. El repo es público, así que la app nace abierta para cualquiera con el enlace. Para pedir usuario y
+   contraseña, en *Settings → Secrets* escribe un usuario por línea y guarda:
+
+   ```toml
+   [usuarios]
+   jorge = "una contraseña larga"
+   ana = "otra contraseña"
+   ```
+
+   Para agregar, cambiar o quitar a alguien, edita esa misma lista. Los Secrets no se suben a GitHub.
 
 Notas:
 
 - Community Cloud toma las dependencias de `dashboard/requirements.txt` y el tema de
   `dashboard/.streamlit/config.toml`.
 - Monitoreo no aparece en la nube: changedetection.io corre en la laptop y allá no hay API key.
-- Para actualizar precios, edita los JSON y súbelos a la rama: la app se actualiza sola.
-- El plan gratuito permite una sola app privada, y quien invites puede invitar a otras personas.
+- Sin la sección `[usuarios]` la app no pide ingreso (así funciona en la laptop). Al recargar la página se vuelve
+  a pedir el ingreso.
+- Para actualizar precios, edita los JSON y súbelos a la rama. Si en unos minutos la app no muestra el cambio,
+  usa *Manage app → Reboot app*.
+- Otra opción, en vez de usuarios propios: *Settings → Sharing → Only specific people can view this app*, que
+  pide entrar con la cuenta de Google o GitHub de cada correo invitado. El plan gratuito permite una sola app
+  privada.
 
 ## Agregar más páginas
 
