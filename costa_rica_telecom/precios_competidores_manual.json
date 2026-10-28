@@ -1,6 +1,6 @@
 {
-  "_descripcion": "Precios de competidores leídos a mano desde el navegador (varios sitios bloquean la lectura automática). Montos en colones, tal como aparecen en cada sitio.",
-  "fecha": "2026-10-24",
+  "_descripcion": "Precios de competidores leídos a mano desde el navegador o de las capturas diarias de changedetection.io (Tigo bloquea la lectura automática). Montos en colones, tal como aparecen en cada sitio.",
+  "fecha": "2026-10-28",
   "operadores": [
     {
       "operador": "Kölbi",

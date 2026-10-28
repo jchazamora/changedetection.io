@@ -1,6 +1,6 @@
 {
   "_descripcion": "Precios de Telecable leídos a mano desde el navegador (Cloudflare bloquea la lectura automática). Montos en colones, tal como aparecen en el catálogo (mes i.i. = impuestos incluidos).",
-  "fecha": "2026-10-23",
+  "fecha": "2026-10-28",
   "fuente": "https://telecablecr.com/catalogo-lineup/",
   "_nota": "Cuando el catálogo muestra dos montos, el tachado es el precio regular y el vigente es el promocional. Revisar antes de comparar.",
   "internet_y_tv": [
