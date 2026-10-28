@@ -1,0 +1,91 @@
+{
+  "_descripcion": "Precios de competidores leídos a mano desde el navegador (varios sitios bloquean la lectura automática). Montos en colones, tal como aparecen en cada sitio.",
+  "fecha": "2026-10-24",
+  "operadores": [
+    {
+      "operador": "Kölbi",
+      "fuente": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica",
+      "nota": "Planes Dúo (Internet + TV). Precio final mensual con impuestos; al precio se suma el alquiler del módem (₡1.130). Los saltos de precio entre 300 y 500 Mbps son los que muestra el sitio.",
+      "internet_y_tv": [
+        {"plan": "Dúo 100 Mbps", "velocidad": "100 Mbps + TV", "precio": 38900, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica"},
+        {"plan": "Dúo 200 Mbps", "velocidad": "200 Mbps + TV", "precio": 42500, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica"},
+        {"plan": "Dúo 300 Mbps", "velocidad": "300 Mbps + TV", "precio": 46600, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica"},
+        {"plan": "Dúo 500 Mbps", "velocidad": "500 Mbps + TV", "precio": 72800, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica"},
+        {"plan": "Dúo 800 Mbps", "velocidad": "800 Mbps + TV", "precio": 164700, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica"},
+        {"plan": "Dúo 1 Gbps", "velocidad": "1 Gbps + TV", "precio": 199800, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica"}
+      ],
+      "solo_internet": [
+        {"plan": "Internet 200 Mbps", "velocidad": "200 Mbps", "precio": 23900, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/internet/fibra-optica"},
+        {"plan": "Internet 300 Mbps", "velocidad": "300 Mbps", "precio": 25900, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/internet/fibra-optica"},
+        {"plan": "Internet 500 Mbps", "velocidad": "500 Mbps", "precio": 27900, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/internet/fibra-optica"},
+        {"plan": "Internet 800 Mbps", "velocidad": "800 Mbps", "precio": 146700, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/internet/fibra-optica"},
+        {"plan": "Internet 1 Gbps", "velocidad": "1 Gbps", "precio": 181800, "link": "https://www.kolbi.cr/tienda/sc/ventas-hogar/internet/fibra-optica"}
+      ]
+    },
+    {
+      "operador": "Claro",
+      "fuente": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/",
+      "nota": "Doble Play del catálogo de planes y precios (3 páginas). Hay planes con TV (IPTV) y planes con telefonía fija (Voz IP). Precios con impuestos; el catálogo no muestra precio regular para estos planes, así que se ven solo en la columna de precio regular.",
+      "internet_y_tv": [
+        {"plan": "Doble Play 150 Mbps Telefonía Fija", "velocidad": "150 Mbps + Telefonía", "precio": 24220, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 300 Mbps Telefonía Fija", "velocidad": "300 Mbps + Telefonía", "precio": 23080, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 500 Mbps Telefonía Fija", "velocidad": "500 Mbps + Telefonía", "precio": 25345, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 600 Mbps Telefonía Fija", "velocidad": "600 Mbps + Telefonía", "precio": 28890, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 1024 Mbps Telefonía Fija", "velocidad": "1024 Mbps + Telefonía", "precio": 45235, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 150 Mbps Ultra HD", "velocidad": "150 Mbps + TV", "precio": 23795, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 150 Mbps Ultra HD Plus", "velocidad": "150 Mbps + TV", "precio": 26205, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 300 Mbps Ultra HD", "velocidad": "300 Mbps + TV", "precio": 23250, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 300 Mbps Ultra HD Plus", "velocidad": "300 Mbps + TV", "precio": 24685, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 500 Mbps Ultra HD", "velocidad": "500 Mbps + TV", "precio": 30105, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 500 Mbps Ultra HD Plus", "velocidad": "500 Mbps + TV", "precio": 31465, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 600 Mbps Ultra HD", "velocidad": "600 Mbps + TV", "precio": 33085, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 600 Mbps Ultra HD Plus", "velocidad": "600 Mbps + TV", "precio": 34105, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 1024 Mbps Ultra HD", "velocidad": "1024 Mbps + TV", "precio": 46045, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"},
+        {"plan": "Doble Play 1024 Mbps Ultra HD Plus", "velocidad": "1024 Mbps + TV", "precio": 47235, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/"}
+      ],
+      "solo_internet": [
+        {"plan": "Fibra 150 Mbps", "velocidad": "150 Mbps simétrico", "precio": 20860, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/internet-fibra-optica/"},
+        {"plan": "Fibra 300 Mbps", "velocidad": "300 Mbps simétrico", "precio": 22285, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/internet-fibra-optica/"},
+        {"plan": "Fibra 500 Mbps", "velocidad": "500 Mbps simétrico", "precio": 23810, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/internet-fibra-optica/"},
+        {"plan": "Fibra 600 Mbps", "velocidad": "600 Mbps simétrico", "precio": 27385, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/internet-fibra-optica/"},
+        {"plan": "Fibra 1024 Mbps", "velocidad": "1024 Mbps simétrico", "precio": 42380, "link": "https://www.claro.cr/personas/servicios/servicios-hogar/internet-fibra-optica/"}
+      ]
+    },
+    {
+      "operador": "Tigo",
+      "fuente": "https://www.tigo.cr/planes",
+      "nota": "Montos IVAI (con impuestos). La compra es por WhatsApp, así que el link es la página de planes. Cuando hay promoción, el precio regular es el del sitio y el promocional es el vigente.",
+      "internet_y_tv": [
+        {"plan": "Internet + TV HD 150 Mbps", "velocidad": "150 Mbps + TV HD", "precio": 25640, "link": "https://www.tigo.cr/planes"},
+        {"plan": "Internet + TV HD 250 Mbps (promo 4 meses)", "velocidad": "250 Mbps + TV HD", "precio_anterior": 26640, "precio": 24990, "link": "https://www.tigo.cr/planes"},
+        {"plan": "Internet + TV HD 350 Mbps", "velocidad": "350 Mbps + TV HD", "precio": 31640, "link": "https://www.tigo.cr/planes"},
+        {"plan": "Internet + TV HD 500 Mbps", "velocidad": "500 Mbps + TV HD", "precio": 34640, "link": "https://www.tigo.cr/planes"}
+      ],
+      "solo_internet": [
+        {"plan": "Internet 150 Mbps", "velocidad": "150 Mbps", "precio": 22150, "link": "https://www.tigo.cr/internet"},
+        {"plan": "Internet 250 Mbps", "velocidad": "250 Mbps", "precio": 23150, "link": "https://www.tigo.cr/internet"},
+        {"plan": "Internet 350 Mbps (promo 4 meses)", "velocidad": "350 Mbps", "precio_anterior": 24150, "precio": 21990, "link": "https://www.tigo.cr/internet"},
+        {"plan": "Internet 500 Mbps", "velocidad": "500 Mbps", "precio": 28150, "link": "https://www.tigo.cr/internet"}
+      ]
+    },
+    {
+      "operador": "Liberty",
+      "fuente": "https://libertycr.com/doble-play",
+      "nota": "Doble Play (Internet + TV). Velocidad y precio tomados de cada tarjeta. En cada tarjeta, el primer monto es el precio promocional y el segundo el precio regular. La página de Solo Internet muestra precios de la oferta con Disney+.",
+      "internet_y_tv": [
+        {"plan": "Doble Play Mega 300", "velocidad": "300 Mbps + TV", "precio_anterior": 39900, "precio": 27900, "link": "https://libertycr.com/doble-play"},
+        {"plan": "Doble Play Mega 120", "velocidad": "120 Mbps + TV", "precio_anterior": 32900, "precio": 27900, "link": "https://libertycr.com/doble-play"},
+        {"plan": "Doble Play Mega 200", "velocidad": "200 Mbps + TV", "precio_anterior": 33900, "precio": 28900, "link": "https://libertycr.com/doble-play"},
+        {"plan": "Doble Play Mega 500", "velocidad": "500 Mbps + TV", "precio_anterior": 43900, "precio": 38900, "link": "https://libertycr.com/doble-play"},
+        {"plan": "Doble Play Mega 1000", "velocidad": "1000 Mbps + TV", "precio": 57900, "link": "https://libertycr.com/doble-play"}
+      ],
+      "solo_internet": [
+        {"plan": "Internet Mega 120", "velocidad": "120 Mbps", "precio_anterior": 29900, "precio": 24900, "link": "https://libertycr.com/internet-hogar/planes"},
+        {"plan": "Internet Mega 200", "velocidad": "200 Mbps", "precio_anterior": 30900, "precio": 25900, "link": "https://libertycr.com/internet-hogar/planes"},
+        {"plan": "Internet Mega 300", "velocidad": "300 Mbps", "precio_anterior": 31900, "precio": 26900, "link": "https://libertycr.com/internet-hogar/planes"},
+        {"plan": "Internet Mega 500", "velocidad": "500 Mbps", "precio_anterior": 35900, "precio": 30900, "link": "https://libertycr.com/internet-hogar/planes"},
+        {"plan": "Internet Mega 1000", "velocidad": "1000 Mbps", "precio": 53900, "link": "https://libertycr.com/internet-hogar/planes"}
+      ]
+    }
+  ]
+}

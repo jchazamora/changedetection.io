@@ -1,0 +1,72 @@
+{
+  "_descripcion": "Precios de Telecable leídos a mano desde el navegador (Cloudflare bloquea la lectura automática). Montos en colones, tal como aparecen en el catálogo (mes i.i. = impuestos incluidos).",
+  "fecha": "2026-10-23",
+  "fuente": "https://telecablecr.com/catalogo-lineup/",
+  "_nota": "Cuando el catálogo muestra dos montos, el tachado es el precio regular y el vigente es el promocional. Revisar antes de comparar.",
+  "internet_y_tv": [
+    {
+      "plan": "Básico",
+      "velocidad": "150 Mbps + TV",
+      "precio": 25990,
+      "link": "https://telecablecr.com/paquete-basico-con-tv/?servdetalle=basico&servicios=internet+tv"
+    },
+    {
+      "plan": "Estándar",
+      "velocidad": "300 Mbps + TV",
+      "precio_anterior": 29990,
+      "precio": 25990,
+      "link": "https://telecablecr.com/paquete-estandar-con-tv/?servdetalle=estandar&servicios=internet+tv"
+    },
+    {
+      "plan": "Ideal",
+      "velocidad": "500 Mbps + TV",
+      "precio": 33990,
+      "link": "https://telecablecr.com/paquete-ideal-con-tv/?servdetalle=ideal&servicios=internet+tv"
+    },
+    {
+      "plan": "Avanzado",
+      "velocidad": "750 Mbps + TV",
+      "precio": 39990,
+      "link": "https://telecablecr.com/paquete-avanzado-con-tv/?servdetalle=avanzado&servicios=internet+tv"
+    },
+    {
+      "plan": "Experto",
+      "velocidad": "1000 Mbps + TV",
+      "precio": 55990,
+      "link": "https://telecablecr.com/paquete-experto-con-tv/?servdetalle=experto&servicios=internet+tv"
+    }
+  ],
+  "solo_internet": [
+    {
+      "plan": "Básico",
+      "velocidad": "150 Mbps",
+      "precio": 22990,
+      "link": null
+    },
+    {
+      "plan": "Estándar",
+      "velocidad": "350 Mbps",
+      "precio_anterior": 25990,
+      "precio": 22990,
+      "link": "https://telecablecr.com/paquete-estandar/?servdetalle=estandar&servicios=internet"
+    },
+    {
+      "plan": "Ideal",
+      "velocidad": "600 Mbps",
+      "precio": 28990,
+      "link": null
+    },
+    {
+      "plan": "Avanzado",
+      "velocidad": "750 Mbps",
+      "precio": 31990,
+      "link": null
+    },
+    {
+      "plan": "Experto",
+      "velocidad": "1000 Mbps",
+      "precio": 39990,
+      "link": null
+    }
+  ]
+}

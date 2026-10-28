@@ -42,4 +42,6 @@ if [ ! -d "$CARPETA/.venv" ]; then
 fi
 "$CARPETA/.venv/bin/pip" install -q -r "$CARPETA/dashboard/requirements.txt"
 echo "Dashboard en http://localhost:8501  (changedetection.io en $CD_URL). Ctrl+C para cerrar el dashboard."
-"$CARPETA/.venv/bin/streamlit" run "$CARPETA/dashboard/app.py" --browser.gatherUsageStats false
+# Desde la carpeta del dashboard, para que Streamlit tome el tema de .streamlit/config.toml
+cd "$CARPETA/dashboard"
+"$CARPETA/.venv/bin/streamlit" run app.py

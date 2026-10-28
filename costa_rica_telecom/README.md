@@ -4,10 +4,13 @@ Lista inicial de watches para changedetection.io y un script que los registra po
 
 - `watches.json`: las páginas a vigilar, con título, grupo (tag) y frecuencia de chequeo.
 - `registrar_watches.py`: lee `watches.json` y crea los watches en tu instancia. Solo usa la librería estándar de Python.
-- `dashboard/`: un dashboard en Streamlit para ver los precios de cada página y compararlos con el operador principal.
+- `dashboard/`: un dashboard en Streamlit que compara los precios de Telecable con los de la competencia y muestra
+  lo que vigila changedetection.io.
+- `precios_telecable_manual.json` y `precios_competidores_manual.json`: los precios de cada plan, capturados a mano
+  desde el navegador (varios sitios bloquean la lectura automática).
 
-**Operador principal: Telecable.** Su watch está en el grupo `Principal`, que el dashboard usa como referencia
-para calcular las diferencias de precio. Para cambiar el principal, mueve otro watch a ese grupo.
+**Operador principal: Telecable.** Es la referencia de las comparaciones del dashboard, y su watch está en el grupo
+`Principal` (marcado con ⭐ en la página de Monitoreo).
 
 ## Inicio rápido (un solo comando)
 
@@ -72,21 +75,55 @@ y lo abre en `http://localhost:8501`. Se puede volver a correr cuando quieras: n
 pip install -r costa_rica_telecom/dashboard/requirements.txt
 export CD_URL=http://127.0.0.1:5000
 export CD_API_KEY=tu_api_key
-streamlit run costa_rica_telecom/dashboard/app.py
+cd costa_rica_telecom/dashboard   # desde aquí, para que tome el tema de .streamlit/config.toml
+streamlit run app.py
 ```
 
-Se abre en `http://localhost:8501`. La URL y la API key también se pueden escribir en la barra lateral.
+Se abre en `http://localhost:8501`, con el morado de Telecable (`#872F98`) y en modo claro u oscuro según el
+sistema. Tiene tres páginas:
 
-Qué muestra:
-- **Resumen por página**: cuántos precios se encontraron, mínimo y máximo, diferencia contra el principal
-  y enlace a la página.
-- **Precio más bajo por página**: gráfico de barras para comparar operadores.
-- **Detalle por página**: cada precio con el texto donde aparece (para saber a qué plan corresponde),
-  los precios que aparecieron o desaparecieron desde la revisión anterior y su evolución en el tiempo.
+- **Precios**: Telecable frente a la competencia, con los precios de los dos JSON. Arriba se eligen los
+  competidores, el servicio (Doble Play, Solo Internet o Internet + Telefonía) y si se compara el precio vigente
+  (con la promoción) o el regular. Muestra:
+  - Indicadores: el plan de entrada de Telecable, el más barato de la competencia, la diferencia típica contra la
+    mediana de la competencia y en cuántos rangos de velocidad Telecable es el más barato.
+  - Por rango de velocidad, dónde queda Telecable frente a la franja de precios de la competencia.
+  - El plan de entrada de cada operador y las promociones publicadas.
+  - Precio según la velocidad, Telecable frente a cada competidor.
+  - La tabla de planes, con enlace a cada uno, ₡ por Mbps y descarga en CSV.
+- **Planes por operador**: la información tal como se capturó, sin cálculos ni gráficos. Una sección por operador
+  con sus tablas de Doble Play y Solo Internet (plan, velocidad, precio regular, precio promocional y enlace), la
+  fecha y la fuente de la captura, y un CSV con todos los planes.
+- **Monitoreo**: el estado de cada página que vigila changedetection.io (al día, error 403, sin texto) y, por
+  página, los precios de la última revisión, los cambios contra la anterior y su evolución. Solo aparece cuando
+  el dashboard tiene la API key en `CD_API_KEY` (`iniciar.ps1` e `iniciar.sh` la ponen solos). La URL y la key
+  se pueden cambiar en *Conexión con changedetection.io*.
 
-Los precios se leen del texto que guarda changedetection.io en cada revisión: montos con `₡`, `¢`, `CRC`,
+Para actualizar precios basta con editar los JSON y recargar la página. La preparación de los datos está en
+`dashboard/datos.py`, con sus pruebas en `dashboard/test_datos.py`.
+
+En Monitoreo, los precios se leen del texto que guarda changedetection.io en cada revisión: montos con `₡`, `¢`, `CRC`,
 `$`, `US$` o `USD`. Si una página muestra muchos precios que no son de planes, agrega un filtro CSS/XPath
 al watch para que solo guarde la sección de planes.
+
+## Publicar el dashboard en Streamlit Community Cloud
+
+Para abrir *Precios* y *Planes por operador* desde cualquier lugar, sin que la laptop esté encendida:
+
+1. Entra a [share.streamlit.io](https://share.streamlit.io) con tu cuenta de GitHub y elige **Create app**.
+2. Repositorio `jchazamora/changedetection.io`, rama `claude/practical-wright-lfqe2x`, archivo
+   `costa_rica_telecom/dashboard/app.py`.
+3. En *Advanced settings*, elige Python 3.12 (el mismo con el que se probó).
+4. El repo es público, así que la app nace pública. En *Settings → Sharing*, elige *Only specific people can
+   view this app* e invita los correos que quieras.
+
+Notas:
+
+- Community Cloud toma las dependencias de `dashboard/requirements.txt` y el tema de
+  `dashboard/.streamlit/config.toml`.
+- Monitoreo no aparece en la nube: changedetection.io corre en la laptop y allá no hay API key.
+- Para actualizar precios, edita los JSON y súbelos a la rama: la app se actualiza sola.
+- El plan gratuito permite una sola app privada, y quien invites puede invitar a otras personas.
 
 ## Agregar más páginas
 

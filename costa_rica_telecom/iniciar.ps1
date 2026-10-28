@@ -39,4 +39,7 @@ Write-Host '4/4 Preparando y abriendo el dashboard...'
 if (-not (Test-Path "$Carpeta\.venv")) { python -m venv "$Carpeta\.venv" }
 & "$Carpeta\.venv\Scripts\pip.exe" install -q -r "$Carpeta\dashboard\requirements.txt"
 Write-Host "Dashboard en http://localhost:8501  (changedetection.io en $env:CD_URL). Ctrl+C para cerrar el dashboard."
-& "$Carpeta\.venv\Scripts\streamlit.exe" run "$Carpeta\dashboard\app.py" --browser.gatherUsageStats false
+# Desde la carpeta del dashboard, para que Streamlit tome el tema de .streamlit\config.toml
+Push-Location "$Carpeta\dashboard"
+try { & "$Carpeta\.venv\Scripts\streamlit.exe" run app.py }
+finally { Pop-Location }

@@ -10,6 +10,60 @@
       "time_between_check": {"hours": 2}
     },
     {
+      "_nota": "Plan combo Internet + TV de Telecable. Página de planes, no referencia de precio (sin grupo 'Principal').",
+      "url": "https://telecablecr.com/paquete-basico-con-tv/?servdetalle=basico&servicios=internet+tv",
+      "title": "Telecable - Combo Básico (Internet + TV)",
+      "tag": "CR Telecom, Operadores, Telecable, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Plan combo Internet + TV de Telecable. Página de planes, no referencia de precio (sin grupo 'Principal').",
+      "url": "https://telecablecr.com/paquete-estandar-con-tv/?servdetalle=estandar&servicios=internet+tv",
+      "title": "Telecable - Combo Estándar (Internet + TV)",
+      "tag": "CR Telecom, Operadores, Telecable, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Plan combo Internet + TV de Telecable. Página de planes, no referencia de precio (sin grupo 'Principal').",
+      "url": "https://telecablecr.com/paquete-ideal-con-tv/?servdetalle=ideal&servicios=internet+tv",
+      "title": "Telecable - Combo Ideal (Internet + TV)",
+      "tag": "CR Telecom, Operadores, Telecable, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Plan combo Internet + TV de Telecable. Página de planes, no referencia de precio (sin grupo 'Principal').",
+      "url": "https://telecablecr.com/paquete-avanzado-con-tv/?servdetalle=avanzado&servicios=internet+tv",
+      "title": "Telecable - Combo Avanzado (Internet + TV)",
+      "tag": "CR Telecom, Operadores, Telecable, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Plan combo Internet + TV de Telecable. Página de planes, no referencia de precio (sin grupo 'Principal').",
+      "url": "https://telecablecr.com/paquete-experto-con-tv/?servdetalle=experto&servicios=internet+tv",
+      "title": "Telecable - Combo Experto (Internet + TV)",
+      "tag": "CR Telecom, Operadores, Telecable, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Plan solo Internet de Telecable (Estándar). Los demás planes solo Internet no tienen link público en el catálogo.",
+      "url": "https://telecablecr.com/paquete-estandar/?servdetalle=estandar&servicios=internet",
+      "title": "Telecable - Solo Internet Estándar",
+      "tag": "CR Telecom, Operadores, Telecable, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"hours": 6}
+    },
+    {
       "_nota": "Regulador. Cambiar por la página exacta de resoluciones, consultas públicas o comunicados.",
       "url": "https://www.sutel.go.cr/",
       "title": "SUTEL - Inicio",

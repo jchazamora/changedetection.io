@@ -1,0 +1,42 @@
+# Tema del dashboard con el morado de Telecable (#872F98, el color de marca de telecablecr.com).
+# Streamlit lo toma de .streamlit/config.toml en la carpeta desde donde se ejecuta: correr `streamlit run app.py`
+# desde costa_rica_telecom/dashboard (iniciar.ps1 e iniciar.sh ya lo hacen).
+
+[theme]
+primaryColor = "#872F98"
+font = "sans-serif"
+headingFont = "Poppins:https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap, sans-serif"
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+metricValueFontWeight = 600
+baseRadius = "0.75rem"
+buttonRadius = "full"
+showWidgetBorder = true
+chartCategoricalColors = ["#9B3DAF", "#8A8696"]
+# Espacio bajo la barra de navegación y al final de la página (por defecto 8rem y 10rem)
+paddingTop = "1.25rem"
+paddingBottom = "3rem"
+
+[theme.light]
+primaryColor = "#872F98"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F5F1F8"
+textColor = "#241E2B"
+linkColor = "#872F98"
+borderColor = "#E6E0EC"
+dataframeHeaderBackgroundColor = "#F5F1F8"
+
+[theme.dark]
+primaryColor = "#BC74CF"
+backgroundColor = "#16121B"
+secondaryBackgroundColor = "#221B29"
+textColor = "#EDE8F2"
+linkColor = "#D29BE0"
+borderColor = "#3A3342"
+dataframeHeaderBackgroundColor = "#221B29"
+
+[client]
+# Sin el botón de Deploy ni las opciones de desarrollo en el menú
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
