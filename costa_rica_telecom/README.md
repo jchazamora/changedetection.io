@@ -90,7 +90,7 @@ sistema. Tiene tres páginas:
   - Por rango de velocidad, dónde queda Telecable frente a la franja de precios de la competencia.
   - El plan de entrada de cada operador y las promociones publicadas.
   - Precio según la velocidad, Telecable frente a cada competidor.
-  - La tabla de planes, con enlace a cada uno, ₡ por Mbps y descarga en CSV.
+  - La tabla de planes, con enlace a cada uno y descarga en CSV.
 - **Planes por operador**: la información tal como se capturó, sin cálculos ni gráficos. Una sección por operador
   con sus tablas de Doble Play y Solo Internet (plan, velocidad, precio regular, precio promocional y enlace), la
   fecha y la fuente de la captura, y un CSV con todos los planes.

@@ -144,7 +144,6 @@ def con_precio(planes, base='vigente'):
     """Agrega 'precio' según la base a comparar ('vigente', con la promoción si la hay, o 'regular')."""
     df = planes.copy()
     df['precio'] = df['precio_regular'] if base == 'regular' else df['precio_vigente']
-    df['colones_por_mbps'] = df['precio'] / df['mbps']
     return df
 
 

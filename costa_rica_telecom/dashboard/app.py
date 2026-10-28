@@ -383,7 +383,7 @@ def comparativo(df, elegidos, servicio):
                     st.altair_chart(grafico_frente_a(df, rival), width='stretch')
 
 
-def tabla_planes(df, notas, servicio, base):
+def tabla_planes(df, notas, servicio):
     orden = df.assign(_otro=df['operador'] != PRINCIPAL).sort_values(['_otro', 'operador', 'mbps', 'precio'])
     vista = pd.DataFrame({
         'Operador': orden['operador'],
@@ -391,16 +391,14 @@ def tabla_planes(df, notas, servicio, base):
         'Velocidad': orden['mbps'],
         'Precio regular': orden['precio_regular'],
         'Precio promocional': orden['precio_promocional'],
-        '₡ por Mbps': orden['colones_por_mbps'],
         'Enlace': orden['link'],
     })
-    st.caption(f'{len(vista)} planes de {servicio}. El ₡ por Mbps usa el precio {base.lower()}.')
+    st.caption(f'{len(vista)} planes de {servicio}.')
     # Alto para ver hasta ~20 planes sin desplazarse dentro de la tabla
     st.dataframe(vista, hide_index=True, width='stretch', height=min(38 + 35 * len(vista), 740), placeholder='—', column_config={
         'Velocidad': st.column_config.NumberColumn(format='%d Mbps'),
         'Precio regular': st.column_config.NumberColumn(format='₡%,d'),
         'Precio promocional': st.column_config.NumberColumn(format='₡%,d', help='Vacío si el plan no tiene promoción.'),
-        '₡ por Mbps': st.column_config.NumberColumn(format='₡%,.0f', help='Precio mensual entre la velocidad: menos es mejor.'),
         'Enlace': st.column_config.LinkColumn(display_text='Abrir plan'),
     })
     nombre = re.sub(r'[^a-z0-9]+', '_', servicio.lower()).strip('_')
@@ -448,7 +446,7 @@ def pagina_precios():
     with pestana_comparativo:
         comparativo(df, elegidos, servicio)
     with pestana_planes:
-        tabla_planes(df, [n for n in notas if n['operador'] in {PRINCIPAL, *elegidos}], servicio, base)
+        tabla_planes(df, [n for n in notas if n['operador'] in {PRINCIPAL, *elegidos}], servicio)
 
 
 # --- Página de planes por operador (la información tal como se capturó) ---------------------------
