@@ -96,12 +96,48 @@
       "time_between_check": {"hours": 6}
     },
     {
+      "_nota": "Captura diaria de los planes Dúo (Internet + TV). La página arma los precios con JavaScript, por eso usa Chrome.",
+      "url": "https://www.kolbi.cr/tienda/sc/ventas-hogar/duo/fibra-optica",
+      "title": "Kölbi - Planes Dúo (Internet + TV)",
+      "tag": "CR Telecom, Operadores, Kölbi, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"days": 1}
+    },
+    {
+      "_nota": "Captura diaria de los planes solo Internet (fibra óptica).",
+      "url": "https://www.kolbi.cr/tienda/sc/ventas-hogar/internet/fibra-optica",
+      "title": "Kölbi - Planes Solo Internet",
+      "tag": "CR Telecom, Operadores, Kölbi, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"days": 1}
+    },
+    {
       "_nota": "Cambiar por la página de planes o tarifas.",
       "url": "https://www.claro.cr/",
       "title": "Claro Costa Rica - Inicio",
       "tag": "CR Telecom, Operadores",
       "time_between_check_use_default": false,
       "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Captura diaria de los planes Doble Play (Internet + TV e Internet + Telefonía).",
+      "url": "https://www.claro.cr/personas/servicios/servicios-hogar/doble-play/planes-y-precios/",
+      "title": "Claro - Planes Doble Play",
+      "tag": "CR Telecom, Operadores, Claro, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"days": 1}
+    },
+    {
+      "_nota": "Captura diaria de los planes solo Internet (fibra óptica).",
+      "url": "https://www.claro.cr/personas/servicios/servicios-hogar/internet-fibra-optica/",
+      "title": "Claro - Planes Solo Internet",
+      "tag": "CR Telecom, Operadores, Claro, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"days": 1}
     },
     {
       "_nota": "Cambiar por la página de planes o tarifas.",
@@ -118,6 +154,24 @@
       "tag": "CR Telecom, Operadores",
       "time_between_check_use_default": false,
       "time_between_check": {"hours": 6}
+    },
+    {
+      "_nota": "Captura diaria de los planes Doble Play. Sin Chrome la página llega sin texto, porque arma las tarjetas con JavaScript.",
+      "url": "https://libertycr.com/doble-play",
+      "title": "Liberty - Planes Doble Play",
+      "tag": "CR Telecom, Operadores, Liberty, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"days": 1}
+    },
+    {
+      "_nota": "Captura diaria de los planes solo Internet.",
+      "url": "https://libertycr.com/internet-hogar/planes",
+      "title": "Liberty - Planes Solo Internet",
+      "tag": "CR Telecom, Operadores, Liberty, Planes",
+      "fetch_backend": "html_webdriver",
+      "time_between_check_use_default": false,
+      "time_between_check": {"days": 1}
     }
   ]
 }

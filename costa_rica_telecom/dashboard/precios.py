@@ -5,10 +5,14 @@ Extracción de precios (colones y dólares) del texto que guarda changedetection
 import re
 from dataclasses import dataclass
 
-# Símbolo seguido del monto: "₡19.900", "¢ 34,600", "CRC 25000", "$25.99", "US$ 30", "USD 1,250.50"
+# Símbolo seguido del monto: "₡19.900", "¢ 34,600", "CRC 25000", "$25.99", "US$ 30", "USD 1,250.50",
+# "₡38 900.00" (Kölbi separa los miles con un espacio). Los miles con espacio van aparte para que en
+# "₡24.900 500 Mbps" no se junte la velocidad con el precio.
 _PATRON_PRECIO = re.compile(
     r'(?P<simbolo>₡|¢|CRC|US\$|USD|\$)\s?'
-    r'(?P<numero>\d{1,3}(?:[.,  ]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)',
+    r'(?P<numero>\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?'
+    r'|\d{1,3}(?:[   ]\d{3})+(?:[.,]\d{1,2})?'
+    r'|\d+(?:[.,]\d{1,2})?)',
     re.IGNORECASE,
 )
 
@@ -23,8 +27,8 @@ class Precio:
 
 
 def _a_numero(texto):
-    """'19.900' -> 19900, '34,600' -> 34600, '25.99' -> 25.99, '1.234,50' -> 1234.5"""
-    t = texto.replace(' ', '').replace(' ', '')
+    """'19.900' -> 19900, '34,600' -> 34600, '25.99' -> 25.99, '1.234,50' -> 1234.5, '38 900.00' -> 38900"""
+    t = re.sub(r'\s', '', texto)
     # Un separador final seguido de 1 o 2 dígitos es decimal; con 3 dígitos es de miles
     m = re.match(r'^(.*?)[.,](\d{1,2})$', t)
     entero, decimales = (m.group(1), m.group(2)) if m else (t, '')

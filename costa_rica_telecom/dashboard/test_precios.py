@@ -12,6 +12,15 @@ def test_colones_con_separador_de_miles():
     assert montos('Plan ₡1.234.500') == [('CRC', 1234500)]
 
 
+def test_miles_separados_con_espacio():
+    # Así publica Kölbi sus precios
+    assert montos('₡46 600.00*') == [('CRC', 46600)]
+    assert montos('alquiler mensual del módem de ₡1 130') == [('CRC', 1130)]
+    assert montos('₡199 800.00*') == [('CRC', 199800)]
+    # Sin confundir la velocidad que sigue al precio con más miles
+    assert montos('Fibra ₡24.900 500 Mbps') == [('CRC', 24900)]
+
+
 def test_dolares_y_decimales():
     assert montos('Plan Pro $25.99 al mes') == [('USD', 25.99)]
     assert montos('US$ 30 mensuales') == [('USD', 30)]
