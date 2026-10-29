@@ -2,7 +2,8 @@
 Precios de los planes capturados a mano (Telecable y la competencia), en tablas listas para el dashboard.
 
 Cada operador tiene dos listas de planes: 'internet_y_tv' (combos) y 'solo_internet'. Cada plan trae 'precio'
-(el vigente) y, cuando hay promoción, 'precio_anterior' (el regular).
+(el vigente) y, cuando hay promoción, 'precio_anterior' (el regular) y opcionalmente 'promo_meses' (cuánto dura la
+promoción; si falta, se busca en el nombre del plan, como en "(promo 4 meses)").
 """
 
 import json
@@ -36,12 +37,14 @@ ETIQUETAS_RANGO = [etiqueta for _, _, etiqueta in RANGOS]
 
 COLUMNAS = [
     'operador', 'servicio', 'plan', 'velocidad', 'mbps', 'rango', 'precio_regular', 'precio_promocional',
-    'precio_vigente', 'en_promocion', 'link', 'fecha', 'fuente',
+    'precio_vigente', 'en_promocion', 'promo_meses', 'link', 'fecha', 'fuente',
 ]
 
 # "300 Mbps + TV", "1 Gbps", "150 Mbps simétrico" / "Mega 120", "120 MEGAS"
 _VELOCIDAD = re.compile(r'(\d+(?:[.,]\d+)?)\s*([gm])bps', re.IGNORECASE)
 _MEGAS = re.compile(r'megas?\s*(\d+)|(\d+)\s*megas?', re.IGNORECASE)
+# "(promo 4 meses)", "promoción por 6 meses"
+_MESES_PROMO = re.compile(r'promo\w*\s*(?:de\s+|por\s+)?(\d+)\s*mes', re.IGNORECASE)
 
 
 def velocidad_mbps(*textos):
@@ -91,6 +94,14 @@ def velocidad_texto(mbps):
     return f'{mbps / 1000:g} Gbps' if mbps >= 1000 and mbps % 1000 == 0 else f'{mbps:g} Mbps'
 
 
+def meses_de_promocion(plan):
+    """Duración de la promoción en meses: el campo 'promo_meses' o lo que diga el nombre del plan, o None."""
+    if plan.get('promo_meses'):
+        return int(plan['promo_meses'])
+    m = _MESES_PROMO.search(plan.get('plan', ''))
+    return int(m.group(1)) if m else None
+
+
 def _servicio(clave, plan):
     if clave == 'solo_internet':
         return SOLO_INTERNET
@@ -115,6 +126,7 @@ def _filas(operador, fuente, fecha, planes_por_servicio):
                 'precio_promocional': float(promocional) if promocional is not None else math.nan,
                 'precio_vigente': float(p['precio']),
                 'en_promocion': promocional is not None,
+                'promo_meses': meses_de_promocion(p) if promocional is not None else None,
                 'link': p.get('link'),
                 'fecha': fecha,
                 'fuente': fuente,
@@ -194,3 +206,97 @@ def comparar_por_rango(df, principal=PRINCIPAL):
     tabla['principal_mas_barato'] = comparable & (tabla['precio_principal'] <= tabla['minimo'])
     tabla['comparable'] = comparable
     return tabla
+
+
+# --- Precios de entrada: Internet solo y combo por velocidad -------------------------------------
+
+INTERNET = 'Internet'
+COMBO = 'Combo'
+
+VIGENCIA_CORTA = 'Promoción de hasta 6 meses'
+VIGENCIA_LARGA = 'Promoción de más de 6 meses'
+VIGENCIA_SIN_DATO = 'Promoción sin plazo publicado'
+VIGENCIA_REGULAR = 'Precio regular, sin plazo'
+VIGENCIAS = [VIGENCIA_CORTA, VIGENCIA_LARGA, VIGENCIA_SIN_DATO, VIGENCIA_REGULAR]
+
+
+def vigencia(en_promocion, meses):
+    if not en_promocion:
+        return VIGENCIA_REGULAR
+    if meses is None or pd.isna(meses):
+        return VIGENCIA_SIN_DATO
+    return VIGENCIA_CORTA if meses <= 6 else VIGENCIA_LARGA
+
+
+def precios_de_entrada(planes, max_mbps=None, base='vigente'):
+    """Por velocidad y operador, el Internet solo y el combo (Internet + TV) más baratos, con la vigencia del precio."""
+    df = con_precio(planes[planes['servicio'].isin([SOLO_INTERNET, DOBLE_PLAY])].dropna(subset=['mbps']), base)
+    if max_mbps is not None:
+        df = df[df['mbps'] <= max_mbps]
+    df['tipo'] = df['servicio'].map({SOLO_INTERNET: INTERNET, DOBLE_PLAY: COMBO})
+    # Con el precio regular no hay promoción que mostrar
+    promo = df['en_promocion'] & (base != 'regular')
+    df['vigencia'] = [vigencia(p, m) for p, m in zip(promo, df['promo_meses'])]
+    df = df.sort_values('precio').drop_duplicates(['mbps', 'operador', 'tipo'])
+    return df.sort_values(['mbps', 'tipo']).reset_index(drop=True)
+
+
+def mas_baratos_por_velocidad(entrada):
+    """Por velocidad y tipo, el precio más bajo y los operadores que lo tienen (puede haber empate)."""
+    minimos = entrada.groupby(['mbps', 'tipo'])['precio'].transform('min')
+    ganadores = entrada[entrada['precio'] == minimos]
+    return (ganadores.groupby(['mbps', 'tipo'], as_index=False)
+            .agg(precio=('precio', 'first'), operadores=('operador', list)))
+
+
+def _lista(elementos):
+    elementos = list(elementos)
+    return elementos[0] if len(elementos) == 1 else ', '.join(elementos[:-1]) + ' y ' + elementos[-1]
+
+
+def _velocidades(mbps):
+    return _lista([velocidad_texto(m) for m in sorted(mbps)])
+
+
+def resumen_entrada(entrada, principal=PRINCIPAL):
+    """Frases cortas con lo más importante de la tabla de precios de entrada."""
+    if entrada.empty:
+        return []
+    ganadores = mas_baratos_por_velocidad(entrada)
+    frases = []
+    for tipo, nombre in ((INTERNET, 'Internet solo'), (COMBO, 'combo')):
+        del_tipo = ganadores[ganadores['tipo'] == tipo]
+        if del_tipo.empty:
+            continue
+        # Solo cuentan las velocidades con al menos dos operadores: con uno solo no hay con quién comparar
+        ofertas = entrada[entrada['tipo'] == tipo].groupby('mbps')['operador'].nunique()
+        del_tipo = del_tipo[del_tipo['mbps'].map(ofertas) >= 2]
+        if del_tipo.empty:
+            continue
+        conteo = del_tipo.explode('operadores')['operadores'].value_counts()
+        lider = conteo.index[0]
+        donde = del_tipo[del_tipo['operadores'].map(lambda ops: lider in ops)]['mbps']
+        frases.append(f'{lider} tiene el {nombre} más barato en {len(donde)} de {len(del_tipo)} velocidades '
+                      f'con competencia ({_velocidades(donde)}).')
+
+        propios = entrada[(entrada['tipo'] == tipo) & (entrada['operador'] == principal) & entrada['mbps'].isin(del_tipo['mbps'])]
+        if propios.empty:
+            continue
+        minimos = del_tipo.set_index('mbps')['precio']
+        gana = propios[propios['precio'] <= propios['mbps'].map(minimos)]
+        pierde = propios[propios['precio'] > propios['mbps'].map(minimos)]
+        n = len(propios)
+        donde_tiene = 'la única velocidad' if n == 1 else f'las {n} velocidades'
+        if pierde.empty:
+            frase = f'En {nombre}, {principal} es el más barato en {donde_tiene} donde tiene oferta'
+        else:
+            diferencia = colones((pierde['precio'] - pierde['mbps'].map(minimos)).mean())
+            if gana.empty:
+                ninguna = 'en la única velocidad' if n == 1 else f'en ninguna de las {n} velocidades'
+                frase = (f'En {nombre}, {principal} no es el más barato {ninguna} donde tiene '
+                         f'oferta: está en promedio {diferencia} por encima del más barato')
+            else:
+                frase = (f'En {nombre}, {principal} es el más barato en {len(gana)} de {n} velocidades donde tiene '
+                         f'oferta; en las demás está en promedio {diferencia} por encima del más barato')
+        frases.append(frase + '.')
+    return frases

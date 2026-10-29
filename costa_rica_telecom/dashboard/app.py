@@ -453,6 +453,145 @@ def pagina_precios():
         tabla_planes(df, [n for n in notas if n['operador'] in {PRINCIPAL, *elegidos}], servicio)
 
 
+# --- Página de precios de entrada (Internet solo y combo por velocidad) ---------------------------
+
+# Colores de la vigencia de cada precio, como en las presentaciones: amarillo 6 meses, azul 12 meses, morado
+# indefinido. Cada etiqueta lleva texto ("4 m", "Regular"), así que la vigencia no depende solo del color.
+VIGENCIA_CLASE = {
+    datos.VIGENCIA_CORTA: 'corta',
+    datos.VIGENCIA_LARGA: 'larga',
+    datos.VIGENCIA_SIN_DATO: 'sin-dato',
+    datos.VIGENCIA_REGULAR: 'regular',
+}
+
+ESTILOS_ENTRADA = """
+<style>
+.tc-matriz-marco { overflow-x: auto; }
+.tc-matriz { width: 100%; border-collapse: separate; border-spacing: 0 .4rem; font-size: .92rem; min-width: 46rem; }
+.tc-matriz th { padding: .35rem .6rem; text-align: left; font-family: Poppins, sans-serif; font-weight: 600;
+  border-bottom: 3px solid #872F98; white-space: nowrap; }
+.tc-matriz th.tc-principal { color: #FFFFFF; background: #872F98; border-radius: .6rem .6rem 0 0; }
+.tc-matriz td { padding: .55rem .6rem; vertical-align: middle; background: rgba(138, 134, 150, .1); }
+.tc-matriz td:first-child { font-weight: 600; white-space: nowrap; border-radius: .6rem 0 0 .6rem; }
+.tc-matriz td:last-child { border-radius: 0 .6rem .6rem 0; }
+.tc-matriz td.tc-principal { background: rgba(155, 61, 175, .14); }
+.tc-oferta { display: flex; align-items: center; gap: .4rem; white-space: nowrap; line-height: 1.6; }
+.tc-oferta .tc-tipo { opacity: .75; min-width: 3.6rem; }
+.tc-oferta a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+.tc-oferta.tc-min .tc-monto { font-weight: 700; }
+.tc-vig { display: inline-block; border-radius: 999px; padding: 0 .45rem; font-size: .72rem; font-weight: 600;
+  line-height: 1.35rem; }
+.tc-vig.corta { background: #F2C94C; color: #241E2B; }
+.tc-vig.larga { background: #2F6FDE; color: #FFFFFF; }
+.tc-vig.regular { background: #9B3DAF; color: #FFFFFF; }
+.tc-vig.sin-dato { border: 1.5px solid currentColor; line-height: calc(1.35rem - 3px); }
+.tc-leyenda { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; margin-top: .4rem; font-size: .82rem; align-items: center; }
+</style>
+"""
+
+
+def _etiqueta_vigencia(fila):
+    if fila['vigencia'] == datos.VIGENCIA_REGULAR:
+        return 'Regular'
+    if fila['vigencia'] == datos.VIGENCIA_SIN_DATO:
+        return 'Promo'
+    return f"{int(fila['promo_meses'])} m"
+
+
+def _celda(ofertas, minimos, competidas):
+    lineas = []
+    for _, o in ofertas.sort_values('tipo', key=lambda t: t != datos.INTERNET).iterrows():
+        # Solo se marca el más barato donde al menos dos operadores tienen ese tipo de plan en esa velocidad
+        clave = (o['mbps'], o['tipo'])
+        es_minimo = clave in competidas and o['precio'] <= minimos[clave]
+        detalle = f"{o['plan']} · {o['vigencia']}"
+        if o['en_promocion']:
+            detalle += f" · regular {datos.colones(o['precio_regular'])}"
+        monto = escape(datos.colones(o['precio'])) + (' ▼' if es_minimo else '')
+        if isinstance(o['link'], str) and o['link']:
+            monto = f'<a href="{escape(o["link"])}" target="_blank" rel="noopener">{monto}</a>'
+        lineas.append(
+            f'<div class="tc-oferta{" tc-min" if es_minimo else ""}" title="{escape(detalle)}">'
+            f'<span class="tc-tipo">{escape(o["tipo"])}</span><span class="tc-monto">{monto}</span>'
+            f'<span class="tc-vig {VIGENCIA_CLASE[o["vigencia"]]}">{escape(_etiqueta_vigencia(o))}</span></div>'
+        )
+    return ''.join(lineas)
+
+
+def matriz_entrada(entrada, operadores):
+    minimos = entrada.groupby(['mbps', 'tipo'])['precio'].min().to_dict()
+    ofertas = entrada.groupby(['mbps', 'tipo'])['operador'].nunique()
+    competidas = set(ofertas[ofertas >= 2].index)
+    clase = {op: ' class="tc-principal"' if op == PRINCIPAL else '' for op in operadores}
+    filas = []
+    for mbps in sorted(entrada['mbps'].unique()):
+        de_velocidad = entrada[entrada['mbps'] == mbps]
+        celdas = ''.join(
+            f'<td{clase[op]}>{_celda(de_velocidad[de_velocidad["operador"] == op], minimos, competidas)}</td>' for op in operadores
+        )
+        filas.append(f'<tr><td>{escape(datos.velocidad_texto(mbps))}</td>{celdas}</tr>')
+    encabezados = ''.join(f'<th{clase[op]}>{escape(op)}</th>' for op in operadores)
+    leyenda = ''.join(
+        f'<span><span class="tc-vig {VIGENCIA_CLASE[v]}">{etiqueta}</span> {escape(v)}</span>'
+        for v, etiqueta in ((datos.VIGENCIA_CORTA, '6 m'), (datos.VIGENCIA_LARGA, '12 m'),
+                            (datos.VIGENCIA_SIN_DATO, 'Promo'), (datos.VIGENCIA_REGULAR, 'Regular'))
+    )
+    st.html(
+        f'{ESTILOS_ENTRADA}<div class="tc-matriz-marco"><table class="tc-matriz">'
+        f'<thead><tr><th>Velocidad</th>{encabezados}</tr></thead><tbody>{"".join(filas)}</tbody></table></div>'
+        f'<div class="tc-leyenda"><strong>Vigencia del precio:</strong>{leyenda}<span>▼ el más barato en esa velocidad</span></div>'
+    )
+
+
+def pagina_entrada():
+    planes, notas = cargar_planes((_version(datos.RUTA_TELECABLE), _version(datos.RUTA_COMPETIDORES)))
+    competidores = [op for op in planes['operador'].unique() if op != PRINCIPAL]
+    encabezado(
+        'Precios de entrada',
+        'Internet solo y combo (Internet + TV) más baratos de cada operador en cada velocidad, con la vigencia del '
+        'precio.',
+        chips=[f"Capturados: {fecha_corta(max((n['fecha'] for n in notas if n.get('fecha')), default=None))}"],
+    )
+    if planes.empty:
+        st.warning('Todavía no hay precios: se cargan de precios_telecable_manual.json y precios_competidores_manual.json.')
+        return
+
+    velocidades = sorted(planes['mbps'].dropna().unique())
+    with st.container(horizontal=True, gap='medium', vertical_alignment='bottom'):
+        elegidos = st.pills('Competidores', competidores, selection_mode='multi', default=competidores,
+                            key='competidores_entrada') or []
+        maximo = st.select_slider('Velocidad máxima', velocidades, value=500 if 500 in velocidades else velocidades[-1],
+                                  format_func=datos.velocidad_texto, key='max_entrada')
+        base = st.segmented_control(
+            'Precio a mostrar', ['Vigente', 'Regular'], default='Vigente', required=True, key='base_entrada',
+            help='Vigente: con la promoción, si el plan tiene una. Regular: el precio sin promoción.',
+        )
+    operadores = [PRINCIPAL, *elegidos]
+    entrada = datos.precios_de_entrada(planes[planes['operador'].isin(operadores)], maximo, base.lower())
+    if entrada.empty:
+        st.info('No hay planes de Internet solo ni combos hasta esa velocidad para los operadores elegidos.')
+        return
+
+    with st.container(border=True):
+        matriz_entrada(entrada, [op for op in operadores if (entrada['operador'] == op).any()])
+        st.caption('Pasa el cursor sobre un precio para ver el plan y, si está en promoción, su precio regular. '
+                   'Cada precio abre la página del plan. La duración de las promociones sale del sitio del operador; '
+                   '"Promo" indica que el sitio no la publica.')
+
+    frases = datos.resumen_entrada(entrada)
+    if frases:
+        st.markdown('**Lo que muestra la tabla**')
+        st.markdown('\n'.join(f'- {f}' for f in frases))
+
+    descarga = pd.DataFrame({
+        'Velocidad (Mbps)': entrada['mbps'], 'Operador': entrada['operador'], 'Tipo': entrada['tipo'],
+        'Plan': entrada['plan'], 'Precio': entrada['precio'], 'Precio regular': entrada['precio_regular'],
+        'Vigencia': entrada['vigencia'], 'Meses de promoción': entrada['promo_meses'], 'Enlace': entrada['link'],
+    })
+    st.download_button('Descargar CSV', descarga.to_csv(index=False).encode('utf-8-sig'),
+                       file_name='precios_de_entrada.csv', mime='text/csv', icon=':material/download:')
+
+
 # --- Página de planes por operador (la información tal como se capturó) ---------------------------
 
 TITULOS_SERVICIO = {
@@ -746,6 +885,7 @@ def pedir_ingreso(usuarios):
 
 paginas = [
     st.Page(pagina_precios, title='Precios', icon=':material/sell:', url_path='precios', default=True),
+    st.Page(pagina_entrada, title='Precios de entrada', icon=':material/grid_view:', url_path='entrada'),
     st.Page(pagina_tablas, title='Planes por operador', icon=':material/table_rows:', url_path='planes'),
 ]
 # changedetection.io corre en la máquina del dashboard. Sin API key (como en Streamlit Community Cloud) no hay

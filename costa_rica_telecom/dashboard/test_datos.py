@@ -3,6 +3,8 @@ import math
 import os
 import tempfile
 
+import pandas as pd
+
 import datos
 
 
@@ -121,3 +123,69 @@ def test_comparacion_sin_principal_ni_competencia():
     tabla = datos.comparar_por_rango(solo_claro)
     assert not tabla['comparable'].any()
     assert tabla['precio_principal'].isna().all()
+
+
+def test_meses_de_promocion():
+    assert datos.meses_de_promocion({'plan': 'Internet 350 Mbps (promo 4 meses)'}) == 4
+    assert datos.meses_de_promocion({'plan': 'Combo', 'promo_meses': 12}) == 12
+    assert datos.meses_de_promocion({'plan': 'Doble Play Mega 300'}) is None
+
+
+def _planes_entrada():
+    filas = [
+        # operador, servicio, plan, mbps, regular, vigente, promo, meses
+        ('Telecable', datos.SOLO_INTERNET, 'Estándar', 300, 25990, 22990, True, 6),
+        ('Telecable', datos.DOBLE_PLAY, 'Estándar', 300, 29990, 25990, True, None),
+        ('Kölbi', datos.SOLO_INTERNET, 'Internet 300', 300, 14095, 14095, False, None),
+        ('Kölbi', datos.SOLO_INTERNET, 'Internet 500', 500, 15095, 15095, False, None),
+        ('Claro', datos.DOBLE_PLAY, 'Ultra HD', 300, 23250, 23250, False, None),
+        ('Claro', datos.DOBLE_PLAY, 'Ultra HD Plus', 300, 24685, 24685, False, None),
+        ('Claro', datos.DOBLE_PLAY, 'Ultra HD 1 Gbps', 1024, 46045, 46045, False, None),
+        ('Tigo', datos.SOLO_INTERNET, 'Internet 500', 500, 28150, 21990, True, 12),
+        ('Claro', datos.INTERNET_TELEFONIA, 'Telefonía', 300, 23080, 23080, False, None),
+    ]
+    return pd.DataFrame([{
+        'operador': o, 'servicio': s, 'plan': p, 'mbps': m, 'precio_regular': r, 'precio_vigente': v,
+        'en_promocion': e, 'promo_meses': meses,
+    } for o, s, p, m, r, v, e, meses in filas])
+
+
+def test_precios_de_entrada():
+    entrada = datos.precios_de_entrada(_planes_entrada(), max_mbps=500)
+    # Sin Internet + Telefonía ni planes de más de 500 Mbps, y un solo combo de Claro en 300 (el más barato)
+    assert set(entrada['tipo']) == {datos.INTERNET, datos.COMBO}
+    assert entrada['mbps'].max() == 500
+    claro = entrada[entrada['operador'] == 'Claro']
+    assert list(claro['plan']) == ['Ultra HD']
+
+    vig = entrada.set_index(['operador', 'tipo', 'mbps'])['vigencia']
+    assert vig[('Telecable', datos.INTERNET, 300)] == datos.VIGENCIA_CORTA
+    assert vig[('Telecable', datos.COMBO, 300)] == datos.VIGENCIA_SIN_DATO
+    assert vig[('Tigo', datos.INTERNET, 500)] == datos.VIGENCIA_LARGA
+    assert vig[('Kölbi', datos.INTERNET, 300)] == datos.VIGENCIA_REGULAR
+
+    regular = datos.precios_de_entrada(_planes_entrada(), max_mbps=500, base='regular')
+    assert set(regular['vigencia']) == {datos.VIGENCIA_REGULAR}
+    assert regular.set_index(['operador', 'tipo', 'mbps']).loc[('Tigo', datos.INTERNET, 500), 'precio'] == 28150
+
+
+def test_resumen_entrada():
+    entrada = datos.precios_de_entrada(_planes_entrada(), max_mbps=500)
+    ganadores = datos.mas_baratos_por_velocidad(entrada).set_index(['mbps', 'tipo'])
+    assert ganadores.loc[(300, datos.INTERNET), 'operadores'] == ['Kölbi']
+    assert ganadores.loc[(500, datos.INTERNET), 'precio'] == 15095
+
+    frases = datos.resumen_entrada(entrada)
+    assert frases[0] == ('Kölbi tiene el Internet solo más barato en 2 de 2 velocidades con competencia '
+                         '(300 Mbps y 500 Mbps).')
+    assert frases[1] == ('En Internet solo, Telecable no es el más barato en la única velocidad donde tiene '
+                         'oferta: está en promedio ₡8.895 por encima del más barato.')
+    assert frases[2].startswith('Claro tiene el combo más barato en 1 de 1')
+    assert frases[3].startswith('En combo, Telecable no es el más barato en la única velocidad')
+
+    # Con el combo de Telecable más barato que el de Claro, gana en todas
+    planes = _planes_entrada()
+    planes.loc[(planes['operador'] == 'Telecable') & (planes['servicio'] == datos.DOBLE_PLAY), 'precio_vigente'] = 20000
+    frases = datos.resumen_entrada(datos.precios_de_entrada(planes, max_mbps=500))
+    assert frases[-1] == 'En combo, Telecable es el más barato en la única velocidad donde tiene oferta.'
+    assert datos.resumen_entrada(entrada.iloc[0:0]) == []

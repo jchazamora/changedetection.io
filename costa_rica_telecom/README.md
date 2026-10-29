@@ -80,7 +80,7 @@ streamlit run app.py
 ```
 
 Se abre en `http://localhost:8501`, con el morado de Telecable (`#872F98`) y en modo claro u oscuro según el
-sistema. Tiene tres páginas:
+sistema. Tiene estas páginas:
 
 - **Precios**: Telecable frente a la competencia, con los precios de los dos JSON. Arriba se eligen los
   competidores, el servicio (Doble Play, Solo Internet o Internet + Telefonía) y si se compara el precio vigente
@@ -91,6 +91,13 @@ sistema. Tiene tres páginas:
   - El plan de entrada de cada operador y las promociones publicadas.
   - Precio según la velocidad, Telecable frente a cada competidor.
   - La tabla de planes, con enlace a cada uno y descarga en CSV.
+- **Precios de entrada**: una tabla como la de las presentaciones, con una fila por velocidad y una columna por
+  operador (Telecable primero). En cada celda, el Internet solo y el combo (Internet + TV) más baratos de ese
+  operador en esa velocidad, con una etiqueta de vigencia: promoción de hasta 6 meses (amarillo), de más de 6 meses
+  (azul), promoción sin plazo publicado (borde) o precio regular (morado). `▼` marca el más barato de cada
+  velocidad. Cada precio abre la página del plan. Debajo, un resumen automático (quién tiene el Internet y el combo
+  más baratos, y dónde queda Telecable) y la descarga en CSV. Se filtra por competidores, velocidad máxima
+  (500 Mbps por defecto) y precio vigente o regular.
 - **Planes por operador**: la información tal como se capturó, sin cálculos ni gráficos. Una sección por operador
   con sus tablas de Doble Play y Solo Internet (plan, velocidad, precio regular, precio promocional y enlace), la
   fecha y la fuente de la captura, y un CSV con todos los planes.
@@ -99,7 +106,9 @@ sistema. Tiene tres páginas:
   el dashboard tiene la API key en `CD_API_KEY` (`iniciar.ps1` e `iniciar.sh` la ponen solos). La URL y la key
   se pueden cambiar en *Conexión con changedetection.io*.
 
-Para actualizar precios basta con editar los JSON y recargar la página. La preparación de los datos está en
+Para actualizar precios basta con editar los JSON y recargar la página. La duración de una promoción va en
+`"promo_meses"` (por ejemplo `"promo_meses": 6`) junto a `"precio_anterior"`; si falta, se toma del nombre del plan
+cuando dice algo como "(promo 4 meses)". La preparación de los datos está en
 `dashboard/datos.py`, con sus pruebas en `dashboard/test_datos.py`.
 
 En Monitoreo, los precios se leen del texto que guarda changedetection.io en cada revisión: montos con `₡`, `¢`, `CRC`,
