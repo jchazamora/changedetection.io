@@ -78,3 +78,12 @@ El dashboard toma como principal cualquier watch del grupo `Principal`.
 - Internet + TV de los cinco operadores viene de la BD Máster, octubre 2026, región Central
   (`importar_bd_maestra.py`). Solo Internet sigue siendo la captura de los sitios del 28/10/2026.
 - En la BD Máster, Telecable tiene precios distintos en Huetar Norte y Pacífico Central; el dashboard usa Central.
+
+## Actualización (página Mercado)
+
+- Página **Mercado**: suscriptores y participación por operador (Internet fijo y TV paga), datos de SUTEL desde
+  enero 2022 (`suscriptores_sutel.csv`, generado con `importar_suscriptores.py` desde los Excel de SUTEL).
+- Desde enero 2026, SUTEL publica en cero a decenas de operadores pequeños que no reportaron; por defecto la página
+  los quita de todos los meses para comparar la participación sobre el mismo grupo.
+- En los datos, Kölbi (ICE) salta de ~238 mil a ~280 mil suscriptores de Internet en enero 2025; parece un ajuste de
+  reporte, no crecimiento real.

@@ -1,6 +1,8 @@
 """
 Dashboard de precios del sector telecom de Costa Rica.
 
+- Mercado: suscriptores y participación de mercado por operador (Internet fijo y TV paga), con los datos de SUTEL
+  de suscriptores_sutel.csv (ver mercado.py).
 - Precios: compara los planes de Telecable (operador principal) con los de la competencia, con los precios
   capturados a mano en precios_telecable_manual.json y precios_competidores_manual.json (ver datos.py).
 - Planes por operador: esos mismos precios tal como se capturaron, en tablas por operador, sin cálculos.
@@ -31,6 +33,7 @@ import streamlit as st
 
 import acceso
 import datos
+import mercado
 from precios import extraer_precios
 
 PRINCIPAL = datos.PRINCIPAL
@@ -750,6 +753,272 @@ def pagina_resumen():
     tarjetas_rivales(datos.resumen_por_rival(datos.cara_a_cara(planes, base)))
 
 
+# --- Página de mercado (suscriptores y participación, datos de SUTEL) ----------------------------
+
+# Telecable en morado; la competencia en grises (más oscuro el más grande) y Otros casi transparente
+GRISES = {'Liberty': '#5E5A68', 'Kölbi': '#7D7987', 'Tigo': '#A19DAA', 'Claro': '#C2BECA', mercado.OTROS: '#DDD9E3'}
+ORDEN_MERCADO = [*mercado.OPERADORES, mercado.OTROS]
+
+ESTILOS_MERCADO = """
+<style>
+.tc-r .tc-ranking { width: 100%; border-collapse: separate; border-spacing: 0 .4rem; font-size: .92rem; }
+.tc-r .tc-ranking th { text-align: left; padding: .3rem .7rem; font-weight: 600; border-bottom: 3px solid var(--morado);
+  white-space: nowrap; }
+.tc-r .tc-ranking td { padding: .6rem .7rem; background: var(--tarjeta); vertical-align: middle; white-space: nowrap; }
+.tc-r .tc-ranking td:first-child { border-radius: .7rem 0 0 .7rem; font-weight: 800; width: 2.5rem; text-align: center; }
+.tc-r .tc-ranking td:last-child { border-radius: 0 .7rem .7rem 0; }
+.tc-r .tc-ranking tr.tc-propio td { background: rgba(155, 61, 175, .14); }
+.tc-r .tc-cuota { display: flex; align-items: center; gap: .55rem; min-width: 13rem; }
+.tc-r .tc-cuota-barra { flex: 1; height: .7rem; border-radius: 999px; background: rgba(138, 134, 150, .18); overflow: hidden; }
+.tc-r .tc-cuota-barra span { display: block; height: 100%; border-radius: 999px; background: var(--gris); }
+.tc-r .tc-propio .tc-cuota-barra span { background: #9B3DAF; }
+.tc-r .tc-cambio { font-weight: 700; }
+.tc-r .tc-cambio.sube { color: var(--txt-verde); }
+.tc-r .tc-cambio.baja { color: var(--txt-rojo); }
+.tc-r .tc-hallazgos { display: grid; gap: .55rem; }
+.tc-r .tc-hallazgo { display: flex; gap: .65rem; align-items: flex-start; padding: .75rem .95rem; border-radius: .8rem;
+  background: var(--tarjeta); border: 1px solid var(--borde); line-height: 1.45; }
+.tc-r .tc-hallazgo .tc-ic { width: 1.55rem; height: 1.55rem; border-radius: 50%; font-size: .82rem; margin-top: .05rem; }
+.tc-r .tc-conv { display: grid; gap: .5rem; }
+.tc-r .tc-conv-fila { display: grid; grid-template-columns: 6rem 1fr 3.5rem; gap: .6rem; align-items: center; font-size: .9rem; }
+.tc-r .tc-conv-fila b { text-align: right; }
+.tc-r .tc-conv-barra { height: .9rem; border-radius: 999px; background: rgba(138, 134, 150, .18); overflow: hidden; }
+.tc-r .tc-conv-barra span { display: block; height: 100%; background: var(--gris); border-radius: 999px; }
+.tc-r .tc-conv-fila.tc-propio .tc-conv-barra span { background: #9B3DAF; }
+.tc-r .tc-marco { overflow-x: auto; }
+</style>
+"""
+
+
+@st.cache_data(show_spinner=False)
+def cargar_suscriptores(version):
+    # 'version' es la fecha de modificación del CSV: al reemplazarlo, la caché se invalida sola
+    return mercado.cargar()
+
+
+def _html_mercado(cuerpo):
+    st.html(f'{ESTILOS_RESUMEN}{ESTILOS_MERCADO}<div class="tc-r">{cuerpo}</div>')
+
+
+def _escala_mercado(operadores):
+    dominio = [op for op in ORDEN_MERCADO if op in set(operadores)]
+    return alt.Scale(domain=dominio, range=[MORADO if op == PRINCIPAL else GRISES.get(op, GRIS) for op in dominio])
+
+
+def grafico_suscriptores_propios(cortes):
+    """Suscriptores de Telecable al cierre de cada año y en el último mes: barras con el valor y una línea encima."""
+    d = pd.DataFrame({'corte': [mercado.mes_texto(m) for m in cortes.index], 'suscriptores': cortes[PRINCIPAL].values})
+    d['texto'] = d['suscriptores'].map(mercado.numero)
+    x = alt.X('corte:N', sort=None, title=None, axis=alt.Axis(labelAngle=0, ticks=False, domain=False))
+    y = alt.Y('suscriptores:Q', title=None, axis=None, scale=alt.Scale(domain=[0, d['suscriptores'].max() * 1.18]))
+    tooltip = [alt.Tooltip('corte:N', title='Corte'), alt.Tooltip('texto:N', title='Suscriptores de Telecable')]
+    barras = alt.Chart(d).mark_bar(color=MORADO, cornerRadiusTopLeft=6, cornerRadiusTopRight=6, size=46).encode(
+        x=x, y=y, tooltip=tooltip)
+    linea = alt.Chart(d).mark_line(color=MORADO, strokeWidth=2, point=alt.OverlayMarkDef(filled=True, size=60, color=MORADO),
+                                   opacity=.55).encode(x=x, y=y)
+    # El valor va dentro de la barra, en blanco sobre el morado: se lee igual en modo claro y oscuro
+    textos = alt.Chart(d).mark_text(dy=14, fontSize=12, fontWeight=700, color='#FFFFFF', aria=False).encode(
+        x=x, y=y, text='texto:N')
+    return alt.layer(barras, linea, textos).properties(height=300).configure_view(strokeWidth=0)
+
+
+def grafico_participacion_cortes(cortes):
+    """Participación de cada operador al cierre de cada año: barras apiladas al 100 %, Telecable abajo."""
+    cuota = mercado.participacion(cortes)
+    d = cuota.reset_index().melt(id_vars='mes', var_name='operador', value_name='cuota')
+    d = d[d['cuota'] > 0]
+    d['corte'] = d['mes'].map(mercado.mes_texto)
+    d['orden'] = d['operador'].map({op: i for i, op in enumerate(ORDEN_MERCADO)})
+    d['texto'] = [mercado.pct(c).replace(',0 %', ' %') if c >= .06 else '' for c in d['cuota']]
+    d['oscuro'] = d['operador'].isin([PRINCIPAL, 'Liberty', 'Kölbi']).astype(int)
+    x = alt.X('corte:N', sort=None, title=None, axis=alt.Axis(labelAngle=0, ticks=False, domain=False))
+    y = alt.Y('cuota:Q', stack='normalize', title=None, axis=None)
+    tooltip = [alt.Tooltip('corte:N', title='Corte'), alt.Tooltip('operador:N', title='Operador'),
+               alt.Tooltip('cuota:Q', title='Participación', format='.1%')]
+    color = alt.Color('operador:N', scale=_escala_mercado(d['operador']),
+                      legend=alt.Legend(title=None, orient='bottom', direction='horizontal', columns=3, symbolType='square'))
+    barras = alt.Chart(d).mark_bar(size=46).encode(x=x, y=y, color=color, order=alt.Order('orden:Q'), tooltip=tooltip)
+    textos = alt.Chart(d).mark_text(fontSize=11, fontWeight=600, aria=False).encode(
+        x=x, y=alt.Y('cuota:Q', stack='normalize', bandPosition=.5), detail='operador:N', order=alt.Order('orden:Q'),
+        text='texto:N', color=alt.condition('datum.oscuro == 1', alt.value('#FFFFFF'), alt.value('#241E2B')))
+    return alt.layer(barras, textos).properties(height=300).configure_view(strokeWidth=0)
+
+
+def grafico_participacion_mensual(tabla):
+    """Participación mes a mes: Telecable en morado y grueso, la competencia en gris con su nombre al final."""
+    cuota = mercado.participacion(tabla)[mercado.OPERADORES]
+    d = cuota.reset_index().melt(id_vars='mes', var_name='operador', value_name='cuota')
+    d = d[d.groupby('operador')['cuota'].transform('max') > 0]
+    d['fecha'] = pd.to_datetime(d['mes'] + '-01')
+    d['es_principal'] = (d['operador'] == PRINCIPAL).astype(int)
+    x = alt.X('fecha:T', title=None, axis=alt.Axis(format='%Y', tickCount='year', grid=False))
+    y = alt.Y('cuota:Q', title=None, axis=alt.Axis(format='.0%', tickCount=5))
+    color = alt.Color('operador:N', scale=_escala_mercado(d['operador']), legend=None)
+    tooltip = [alt.Tooltip('operador:N', title='Operador'), alt.Tooltip('fecha:T', title='Mes', format='%m/%Y'),
+               alt.Tooltip('cuota:Q', title='Participación', format='.1%')]
+    lineas = alt.Chart(d).mark_line().encode(
+        x=x, y=y, color=color, size=alt.Size('es_principal:Q', scale=alt.Scale(domain=[0, 1], range=[1.8, 4]), legend=None),
+        detail='operador:N', tooltip=tooltip)
+    puntos = alt.Chart(d).mark_point(filled=True, size=600, opacity=.001, aria=False).encode(x=x, y=y, tooltip=tooltip)
+    final = d[d['fecha'] == d['fecha'].max()].assign(etiqueta=lambda f: f['operador'] + ' ' + f['cuota'].map(mercado.pct))
+    etiquetas = alt.Chart(final).mark_text(align='left', dx=8, fontSize=12, fontWeight=600, aria=False).encode(
+        x=x, y=y, text='etiqueta:N', color=color)
+    return (alt.layer(lineas, puntos, etiquetas).properties(height=320, padding={'right': 120})
+            .configure_view(strokeWidth=0))
+
+
+def ranking_mercado(res, previo):
+    filas = ''
+    principales = res[res['operador'] != mercado.OTROS].sort_values('suscriptores', ascending=False)
+    otros = res[res['operador'] == mercado.OTROS]
+    for _, r in pd.concat([principales, otros]).iterrows():
+        # Un operador sin suscriptores en este servicio (Claro en TV paga) no va en el ranking
+        if not r['suscriptores'] and not r.get('altas_netas'):
+            continue
+        clase = ' class="tc-propio"' if r['operador'] == PRINCIPAL else ''
+        puesto = int(r['ranking']) if pd.notna(r['ranking']) else '–'
+        celdas = (f'<td>{puesto}</td><td><b>{escape(r["operador"])}</b></td><td>{mercado.numero(r["suscriptores"])}</td>'
+                  f'<td><div class="tc-cuota"><div class="tc-cuota-barra"><span style="width:{r["participacion"] * 100:.1f}%">'
+                  f'</span></div><b>{mercado.pct(r["participacion"])}</b></div></td>')
+        if previo:
+            def cambio(valor, texto):
+                if pd.isna(valor):
+                    return '<td>—</td>'
+                sentido = 'sube' if valor > 0 else 'baja' if valor < 0 else ''
+                flecha = '▲' if valor > 0 else '▼' if valor < 0 else '='
+                return f'<td><span class="tc-cambio {sentido}">{flecha} {escape(texto)}</span></td>'
+            celdas += cambio(r['cambio_pp'], mercado.puntos(r['cambio_pp']) if pd.notna(r['cambio_pp']) else '')
+            altas = r['altas_netas']
+            celdas += cambio(altas, f"{'+' if altas > 0 else '−' if altas < 0 else ''}{mercado.numero(abs(altas))}")
+        filas += f'<tr{clase}>{celdas}</tr>'
+    encabezados = '<th>#</th><th>Operador</th><th>Suscriptores</th><th>Participación</th>'
+    if previo:
+        encabezados += f'<th>Cambio en 12 meses</th><th>Altas netas desde {escape(mercado.mes_texto(previo))}</th>'
+    _html_mercado(f'<div class="tc-marco"><table class="tc-ranking"><thead><tr>{encabezados}</tr></thead>'
+                  f'<tbody>{filas}</tbody></table></div>')
+
+
+def lista_mercado(frases):
+    iconos = {'bien': ('bien', '✓'), 'mal': ('mal', '!'), 'mercado': ('mercado', 'i')}
+    items = ''.join(f'<div class="tc-hallazgo"><span class="tc-ic {iconos[t][0]}">{iconos[t][1]}</span>'
+                    f'<div>{escape(texto)}</div></div>' for t, texto in frases)
+    _html_mercado(f'<div class="tc-hallazgos">{items}</div>')
+
+
+def barras_convergencia(mes, tv_por_100):
+    tv_por_100 = tv_por_100[tv_por_100 > 0].sort_values(ascending=False)
+    maximo = max(tv_por_100.max(), 1)
+    filas = ''.join(
+        f'<div class="tc-conv-fila{" tc-propio" if op == PRINCIPAL else ""}"><span>{escape(op)}</span>'
+        f'<div class="tc-conv-barra"><span style="width:{v / maximo * 100:.0f}%"></span></div><b>{v:.0f}</b></div>'
+        for op, v in tv_por_100.items()
+    )
+    _html_mercado(f'<div class="tc-conv">{filas}</div>')
+
+
+def pagina_mercado():
+    df = cargar_suscriptores(_version(mercado.RUTA))
+    if df.empty:
+        encabezado('Mercado y suscriptores', 'Suscriptores y participación de mercado por operador.')
+        st.warning('Todavía no hay datos: se cargan de suscriptores_sutel.csv (ver importar_suscriptores.py).')
+        return
+
+    cabeza = st.container()
+    with st.container(horizontal=True, gap='medium', vertical_alignment='bottom'):
+        servicio = st.segmented_control('Servicio', mercado.SERVICIOS, default=mercado.INTERNET, required=True,
+                                        key='servicio_mercado')
+        comparable = st.toggle(
+            'Comparar solo operadores que reportaron en el último mes', value=True, key='comparable_mercado',
+            help='SUTEL publica en cero a los operadores que todavía no reportan el último mes. Activado, esos operadores '
+                 'se quitan de todos los meses para que la participación se compare siempre sobre el mismo grupo.')
+    if comparable:
+        datos_servicio, excluidos = mercado.solo_reportados(df, servicio)
+    else:
+        datos_servicio, excluidos = df[df['servicio'] == servicio], mercado.sin_reporte(df, servicio, minimo=1)
+    tabla = mercado.por_operador(datos_servicio, servicio)
+    res, ultimo, previo = mercado.resumen(tabla)
+    r = res.set_index('operador')
+    propio = r.loc[PRINCIPAL]
+    total = int(tabla.loc[ultimo].sum())
+
+    with cabeza:
+        puesto = int(propio['ranking'])
+        titular = (f'Telecable es #{puesto} en {servicio} con {mercado.pct(propio["participacion"])} del mercado'
+                   if puesto <= 3 else f'Telecable tiene {mercado.pct(propio["participacion"])} del mercado de {servicio}')
+        otro = mercado.TV if servicio == mercado.INTERNET else mercado.INTERNET
+        otro_res = mercado.resumen(mercado.por_operador(mercado.solo_reportados(df, otro)[0] if comparable else df, otro))[0]
+        otro_propio = otro_res.set_index('operador').loc[PRINCIPAL]
+        chips = ''.join(f'<span>{escape(c)}</span>' for c in (
+            'Fuente: SUTEL, suscriptores por operador',
+            f'{mercado.mes_texto(tabla.index[0])} a {mercado.mes_texto(ultimo)}',
+            f'En {otro}: #{int(otro_propio["ranking"])} con {mercado.pct(otro_propio["participacion"])}',
+        ))
+        _html_mercado(
+            f'<div class="tc-hero"><div><div class="tc-eti">Participación de mercado · {escape(servicio)}</div>'
+            f'<h1>{escape(titular).replace(" %", "&nbsp;%")}</h1><p>{mercado.numero(propio["suscriptores"])} suscriptores de un total de '
+            f'{mercado.numero(total)} en {escape(mercado.mes_texto(ultimo))}. Telecable frente a Liberty, Kölbi, Tigo, '
+            f'Claro y el resto de los operadores.</p><div class="tc-chips">{chips}</div></div>'
+            f'<div class="tc-indice"><b>{mercado.pct(propio["participacion"])}</b>'
+            f'<span>del mercado de {escape(servicio)}<br>{escape(mercado.mes_texto(ultimo))}</span></div></div>'
+        )
+        if previo:
+            total_previo = int(tabla.loc[previo].sum())
+            kpis = [
+                ('bien' if propio['altas_netas'] >= 0 else 'mal', '▲' if propio['altas_netas'] >= 0 else '▼',
+                 mercado.numero(propio['suscriptores']),
+                 f"suscriptores · {'+' if propio['altas_netas'] >= 0 else '−'}{mercado.numero(abs(propio['altas_netas']))} en 12 meses"),
+                ('bien' if propio['cambio_pp'] >= 0 else 'mal', '%', mercado.pct(propio['participacion']),
+                 f"participación · {mercado.puntos(propio['cambio_pp'])} en 12 meses"),
+                ('bien' if puesto == 1 else 'igual', '#', f'#{puesto}', f'de {len(mercado.OPERADORES)} operadores principales'),
+                ('vacio', 'Σ', mercado.numero(total),
+                 f"suscriptores en el mercado · {mercado.pct((total - total_previo) / total_previo, True)} en 12 meses"),
+            ]
+            _html_mercado('<div class="tc-kpis">' + ''.join(
+                f'<div class="tc-kpi {c}"><div class="tc-ic">{i}</div><div><b>{escape(n)}</b><span>{escape(t)}</span></div></div>'
+                for c, i, n, t in kpis) + '</div>')
+    if not excluidos.empty:
+        detalle = ('se quitaron de todos los meses' if comparable else
+                   'aparecen en cero; el total del último mes es menor y la participación de los grandes se ve mayor')
+        st.caption(f'{len(excluidos)} operadores pequeños, con {mercado.numero(excluidos["suscriptores"].sum())} '
+                   f'suscriptores en {mercado.mes_texto(excluidos["mes"].iloc[0])}, no reportaron '
+                   f'{mercado.mes_texto(ultimo)}: {detalle}.')
+
+    st.subheader('Lo que dicen los números')
+    lista_mercado(mercado.hallazgos(datos_servicio, servicio))
+
+    cortes = mercado.cortes_anuales(tabla)
+    izq, der = st.columns(2, gap='medium')
+    with izq.container(border=True):
+        st.markdown(f'**Suscriptores de Telecable en {servicio}**')
+        st.caption('Al cierre de cada año y en el último mes disponible.')
+        st.altair_chart(grafico_suscriptores_propios(cortes), width='stretch')
+    with der.container(border=True):
+        st.markdown(f'**Participación de mercado en {servicio}**')
+        st.caption('Al cierre de cada año y en el último mes. Telecable abajo, en morado.')
+        st.altair_chart(grafico_participacion_cortes(cortes), width='stretch')
+
+    with st.container(border=True):
+        st.markdown('**Participación mes a mes**')
+        st.caption('Telecable en morado; la competencia en gris, con su participación del último mes al final de la línea.')
+        st.altair_chart(grafico_participacion_mensual(tabla), width='stretch')
+
+    st.subheader('Ranking de operadores')
+    st.caption(f'Suscriptores y participación en {mercado.mes_texto(ultimo)}. "Otros" agrupa al resto de operadores.')
+    ranking_mercado(res, previo)
+
+    mes_conv, tv_por_100 = mercado.convergencia(df)
+    if mes_conv and not tv_por_100.empty:
+        st.subheader('Internet y TV juntos')
+        st.caption(f'Suscriptores de TV paga por cada 100 suscriptores de Internet fijo en {mercado.mes_texto(mes_conv)}. '
+                   'Indica cuánto pesa la TV en la base de clientes de cada operador.')
+        barras_convergencia(mes_conv, tv_por_100)
+
+    descarga = tabla.reset_index().melt(id_vars='mes', var_name='operador', value_name='suscriptores')
+    st.download_button('Descargar suscriptores por operador (CSV)', descarga.to_csv(index=False).encode('utf-8-sig'),
+                       file_name=f"suscriptores_{servicio.lower().replace(' ', '_')}.csv", mime='text/csv',
+                       icon=':material/download:')
+
+
 # --- Página de precios de entrada (Internet solo y combo por velocidad) ---------------------------
 
 # Colores de la vigencia de cada precio, como en las presentaciones: amarillo 6 meses, azul 12 meses, morado
@@ -1190,6 +1459,7 @@ def pedir_ingreso(usuarios):
 
 paginas = [
     st.Page(pagina_resumen, title='Resumen ejecutivo', icon=':material/insights:', url_path='resumen', default=True),
+    st.Page(pagina_mercado, title='Mercado', icon=':material/groups:', url_path='mercado'),
     st.Page(pagina_entrada, title='Precios de entrada', icon=':material/grid_view:', url_path='entrada'),
     st.Page(pagina_precios, title='Precios', icon=':material/sell:', url_path='precios'),
     st.Page(pagina_tablas, title='Planes por operador', icon=':material/table_rows:', url_path='planes'),

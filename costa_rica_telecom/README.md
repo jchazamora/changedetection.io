@@ -100,6 +100,13 @@ sistema. Tiene estas páginas:
   - El plan de entrada de cada operador y las promociones publicadas.
   - Precio según la velocidad, Telecable frente a cada competidor.
   - La tabla de planes, con enlace a cada uno y descarga en CSV.
+- **Mercado**: suscriptores y participación de mercado de Telecable frente a Liberty, Kölbi, Tigo, Claro y "Otros",
+  en Internet fijo y TV paga, con los datos de SUTEL desde enero 2022 hasta el último mes publicado. Titular con la
+  posición y la participación de Telecable, indicadores (suscriptores, participación, ranking y tamaño del mercado,
+  con su cambio en 12 meses), conclusiones en frases, suscriptores de Telecable y participación de cada operador al
+  cierre de cada año, participación mes a mes, ranking con altas netas y "Internet y TV juntos" (suscriptores de TV
+  por cada 100 de Internet). Por defecto compara solo los operadores que reportaron el último mes: SUTEL publica en
+  cero a los que todavía no reportan, y eso inflaría la participación de los grandes.
 - **Precios de entrada**: una tabla como la de las presentaciones, con una fila por velocidad y una columna por
   operador (Telecable primero). En cada celda, el Internet solo y el combo (Internet + TV) más baratos de ese
   operador en esa velocidad, con una etiqueta de vigencia: promoción de hasta 6 meses (amarillo), de más de 6 meses
@@ -114,6 +121,18 @@ sistema. Tiene estas páginas:
   página, los precios de la última revisión, los cambios contra la anterior y su evolución. Solo aparece cuando
   el dashboard tiene la API key en `CD_API_KEY` (`iniciar.ps1` e `iniciar.sh` la ponen solos). La URL y la key
   se pueden cambiar en *Conexión con changedetection.io*.
+
+### Suscriptores de SUTEL
+
+La página Mercado lee `suscriptores_sutel.csv`, que se genera desde los Excel de SUTEL de suscriptores por operador:
+
+```bash
+python3 costa_rica_telecom/importar_suscriptores.py --internet "Suscriptores por Internet.xlsx" --tv "Suscriptores por TV.xlsx"
+```
+
+Guarda desde enero 2022 hasta el último mes de cada archivo y comprueba que la suma de los operadores coincida con la
+fila TOTALES. Las razones sociales se agrupan en `dashboard/mercado.py`: Liberty incluye Liberty Servicios Fijos y
+Cabletica; Kölbi es el ICE; Tigo es Millicom. Después de correrlo, subir el CSV y reiniciar la app.
 
 ### Precios de Internet + TV desde la BD Máster
 
