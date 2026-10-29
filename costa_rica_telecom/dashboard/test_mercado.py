@@ -64,7 +64,7 @@ def test_sin_reporte_y_hallazgos():
     assert frases[0] == ('Telecable es el operador con más suscriptores de Internet fijo: 130 (47,3 % del mercado), '
                          '35 más que Liberty.')
     assert any(f.startswith('Kölbi es el que más participación perdió: −') for f in frases)
-    assert mercado.pct(0.2611) == '26,1 %' and mercado.puntos(2.09) == '+2,1 puntos'
+    assert mercado.pct(0.2611) == '26,1 %' and mercado.pct(16.356, True) == '+1.635,6 %' and mercado.puntos(2.09) == '+2,1 puntos'
 
 
 def test_convergencia():

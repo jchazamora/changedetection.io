@@ -50,7 +50,9 @@ def numero(valor):
 
 def pct(fraccion, signo=False):
     """0.2611 -> '26,1 %'; con signo, '+26,1 %'"""
-    return f"{fraccion * 100:{'+' if signo else ''}.1f} %".replace('.', ',').replace('-', '−')
+    texto = f"{fraccion * 100:{'+' if signo else ''},.1f}"
+    # Separadores al estilo de Costa Rica: punto para miles y coma para decimales
+    return texto.replace(',', ' ').replace('.', ',').replace(' ', '.').replace('-', '−') + ' %'
 
 
 def puntos(valor):

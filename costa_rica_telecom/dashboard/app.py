@@ -805,21 +805,35 @@ def _escala_mercado(operadores):
     return alt.Scale(domain=dominio, range=[MORADO if op == PRINCIPAL else GRISES.get(op, GRIS) for op in dominio])
 
 
-def grafico_suscriptores_propios(cortes):
-    """Suscriptores de Telecable al cierre de cada año y en el último mes: barras con el valor y una línea encima."""
-    d = pd.DataFrame({'corte': [mercado.mes_texto(m) for m in cortes.index], 'suscriptores': cortes[PRINCIPAL].values})
+MERCADO_TOTAL = 'Mercado total'
+
+
+def suscriptores_de(cortes, operador):
+    return cortes.sum(axis=1) if operador == MERCADO_TOTAL else cortes[operador]
+
+
+def grafico_suscriptores(cortes, operador=PRINCIPAL):
+    """Suscriptores de un operador (o del mercado) al cierre de cada año y en el último mes: barras con el valor y una
+    línea encima. Telecable en morado; la competencia y el mercado en gris oscuro."""
+    valores = suscriptores_de(cortes, operador)
+    color = MORADO if operador == PRINCIPAL else GRISES['Liberty']
+    d = pd.DataFrame({'corte': [mercado.mes_texto(m) for m in cortes.index], 'suscriptores': valores.values})
     d['texto'] = d['suscriptores'].map(mercado.numero)
     x = alt.X('corte:N', sort=None, title=None, axis=alt.Axis(labelAngle=0, ticks=False, domain=False))
-    y = alt.Y('suscriptores:Q', title=None, axis=None, scale=alt.Scale(domain=[0, d['suscriptores'].max() * 1.18]))
-    tooltip = [alt.Tooltip('corte:N', title='Corte'), alt.Tooltip('texto:N', title='Suscriptores de Telecable')]
-    barras = alt.Chart(d).mark_bar(color=MORADO, cornerRadiusTopLeft=6, cornerRadiusTopRight=6, size=46).encode(
+    y = alt.Y('suscriptores:Q', title=None, axis=None, scale=alt.Scale(domain=[0, max(d['suscriptores'].max(), 1) * 1.18]))
+    tooltip = [alt.Tooltip('corte:N', title='Corte'), alt.Tooltip('texto:N', title=f'Suscriptores de {operador}')]
+    barras = alt.Chart(d).mark_bar(color=color, cornerRadiusTopLeft=6, cornerRadiusTopRight=6, size=46).encode(
         x=x, y=y, tooltip=tooltip)
-    linea = alt.Chart(d).mark_line(color=MORADO, strokeWidth=2, point=alt.OverlayMarkDef(filled=True, size=60, color=MORADO),
+    linea = alt.Chart(d).mark_line(color=color, strokeWidth=2, point=alt.OverlayMarkDef(filled=True, size=60, color=color),
                                    opacity=.55).encode(x=x, y=y)
-    # El valor va dentro de la barra, en blanco sobre el morado: se lee igual en modo claro y oscuro
-    textos = alt.Chart(d).mark_text(dy=14, fontSize=12, fontWeight=700, color='#FFFFFF', aria=False).encode(
+    # El valor va dentro de la barra, en blanco sobre el color: se lee igual en modo claro y oscuro
+    # En una barra muy baja el número no cabe adentro: va encima, en gris, que se lee sobre ambos fondos
+    d['alta'] = d['suscriptores'] >= d['suscriptores'].max() * .12
+    dentro = alt.Chart(d[d['alta']]).mark_text(dy=14, fontSize=12, fontWeight=700, color='#FFFFFF', aria=False).encode(
         x=x, y=y, text='texto:N')
-    return alt.layer(barras, linea, textos).properties(height=300).configure_view(strokeWidth=0)
+    encima = alt.Chart(d[~d['alta']]).mark_text(dy=-14, fontSize=12, fontWeight=700, color=GRIS, aria=False).encode(
+        x=x, y=y, text='texto:N')
+    return alt.layer(barras, linea, dentro, encima).properties(height=300).configure_view(strokeWidth=0)
 
 
 def grafico_participacion_cortes(cortes):
@@ -989,9 +1003,19 @@ def pagina_mercado():
     cortes = mercado.cortes_anuales(tabla)
     izq, der = st.columns(2, gap='medium')
     with izq.container(border=True):
-        st.markdown(f'**Suscriptores de Telecable en {servicio}**')
-        st.caption('Al cierre de cada año y en el último mes disponible.')
-        st.altair_chart(grafico_suscriptores_propios(cortes), width='stretch')
+        # Solo los operadores que tienen suscriptores en este servicio (Claro no tiene TV paga)
+        opciones = [op for op in [*mercado.OPERADORES, mercado.OTROS] if tabla[op].any()] + [MERCADO_TOTAL]
+        if st.session_state.get('operador_mercado') not in opciones:
+            st.session_state['operador_mercado'] = PRINCIPAL
+        operador = st.pills('Operador', opciones, required=True, key='operador_mercado', label_visibility='collapsed')
+        valores = suscriptores_de(cortes, operador)
+        st.markdown(f'**Suscriptores de {operador} en {servicio}**')
+        variacion = ''
+        if len(valores) > 1 and valores.iloc[0]:
+            variacion = (f' De {mercado.mes_texto(cortes.index[0])} a {mercado.mes_texto(cortes.index[-1])}: '
+                         f'{mercado.pct((valores.iloc[-1] - valores.iloc[0]) / valores.iloc[0], True)}.')
+        st.caption(f'Al cierre de cada año y en el último mes disponible.{variacion}')
+        st.altair_chart(grafico_suscriptores(cortes, operador), width='stretch')
     with der.container(border=True):
         st.markdown(f'**Participación de mercado en {servicio}**')
         st.caption('Al cierre de cada año y en el último mes. Telecable abajo, en morado.')
