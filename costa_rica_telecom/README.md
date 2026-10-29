@@ -104,7 +104,8 @@ sistema. Tiene estas páginas:
   en Internet fijo y TV paga, con los datos de SUTEL desde enero 2022 hasta el último mes publicado. Titular con la
   posición y la participación de Telecable, indicadores (suscriptores, participación, ranking y tamaño del mercado,
   con su cambio en 12 meses), conclusiones en frases, suscriptores de Telecable y participación de cada operador al
-  cierre de cada año, participación mes a mes, ranking con altas netas y "Internet y TV juntos" (suscriptores de TV
+  cierre de cada año (con botones para ver un operador, Otros o el mercado total, o comparar hasta cuatro a la vez),
+  participación mes a mes, ranking con altas netas y "Internet y TV juntos" (suscriptores de TV
   por cada 100 de Internet). Por defecto compara solo los operadores que reportaron el último mes: SUTEL publica en
   cero a los que todavía no reportan, y eso inflaría la participación de los grandes.
 - **Precios de entrada**: una tabla como la de las presentaciones, con una fila por velocidad y una columna por
@@ -121,6 +122,9 @@ sistema. Tiene estas páginas:
   página, los precios de la última revisión, los cambios contra la anterior y su evolución. Solo aparece cuando
   el dashboard tiene la API key en `CD_API_KEY` (`iniciar.ps1` e `iniciar.sh` la ponen solos). La URL y la key
   se pueden cambiar en *Conexión con changedetection.io*.
+
+Colores de los operadores en todo el dashboard: Telecable morado (`#9B3DAF`), Tigo `#263AC7`, Liberty `#4559FF`,
+Claro `#DE4633` y Kölbi `#2AD42E` (definidos en `COLOR_OPERADOR`, en `dashboard/app.py`).
 
 ### Suscriptores de SUTEL
 
