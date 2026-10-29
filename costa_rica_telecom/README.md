@@ -82,6 +82,14 @@ streamlit run app.py
 Se abre en `http://localhost:8501`, con el morado de Telecable (`#872F98`) y en modo claro u oscuro según el
 sistema. Tiene estas páginas:
 
+- **Resumen ejecutivo** (la de inicio): pensada para que un director la lea en un minuto. Compara el plan más
+  barato de Telecable con el más barato de la competencia en cada rango de velocidad, para Internet + TV y Solo
+  Internet, y lo dice con un semáforo: verde si Telecable es más barato, amarillo si la diferencia es de 3 % o menos,
+  rojo si la competencia es más barata, gris si Telecable no tiene plan. Arriba, cuántos rangos hay de cada color;
+  luego conclusiones en frases (mayor ventaja, mayor desventaja, rangos sin plan, la oferta más agresiva del mercado,
+  cuántas promociones son largas o permanentes y qué competidor presiona más); el semáforo por velocidad con los
+  precios y la diferencia; y el cara a cara con cada competidor.
+
 - **Precios**: Telecable frente a la competencia, con los precios de los dos JSON. Arriba se eligen los
   competidores, el servicio (Doble Play, Solo Internet o Internet + Telefonía) y si se compara el precio vigente
   (con la promoción) o el regular. Muestra:
@@ -106,7 +114,21 @@ sistema. Tiene estas páginas:
   el dashboard tiene la API key en `CD_API_KEY` (`iniciar.ps1` e `iniciar.sh` la ponen solos). La URL y la key
   se pueden cambiar en *Conexión con changedetection.io*.
 
-Para actualizar precios basta con editar los JSON y recargar la página. La duración de una promoción va en
+### Precios de Internet + TV desde la BD Máster
+
+Los precios de Internet + TV (regular, promocional y vigencia de la promoción) se cargan desde el CSV de la BD Máster
+con:
+
+```bash
+python3 costa_rica_telecom/importar_bd_maestra.py "BD_Máster_Precios_Internet_TV.csv" --mes oct-26 --region Central
+```
+
+Toma el mes y la región indicados para Telecable, Kölbi, Claro, Tigo y Liberty (los demás proveedores del archivo se
+ignoran) y reemplaza la lista `internet_y_tv` de cada uno en los JSON, conservando el nombre y el enlace de los planes
+que ya existían. Solo Internet no cambia: la BD Máster no lo trae. El CSV no se sube al repositorio (el repo es
+público); solo quedan en los JSON los precios del mes elegido. Después de correrlo, subir los JSON y reiniciar la app.
+
+Para actualizar precios a mano basta con editar los JSON y recargar la página. La duración de una promoción va en
 `"promo_meses"` (por ejemplo `"promo_meses": 6`) junto a `"precio_anterior"`; si falta, se toma del nombre del plan
 cuando dice algo como "(promo 4 meses)". La preparación de los datos está en
 `dashboard/datos.py`, con sus pruebas en `dashboard/test_datos.py`.

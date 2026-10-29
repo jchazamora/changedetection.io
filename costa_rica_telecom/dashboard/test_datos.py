@@ -129,11 +129,15 @@ def test_meses_de_promocion():
     assert datos.meses_de_promocion({'plan': 'Internet 350 Mbps (promo 4 meses)'}) == 4
     assert datos.meses_de_promocion({'plan': 'Combo', 'promo_meses': 12}) == 12
     assert datos.meses_de_promocion({'plan': 'Doble Play Mega 300'}) is None
+    assert datos.meses_de_promocion({'plan': 'Combo', 'vigencia': 'promoción por 12 meses'}) == 12
+    assert datos.promocion_indefinida({'plan': 'Combo', 'vigencia': 'Permanente'})
+    assert datos.promocion_indefinida({'plan': 'Combo', 'vigencia': 'Indefinido '})
+    assert not datos.promocion_indefinida({'plan': 'Combo', 'vigencia': '12 meses'})
 
 
 def _planes_entrada():
     filas = [
-        # operador, servicio, plan, mbps, regular, vigente, promo, meses
+        # operador, servicio, plan, mbps, regular, vigente, promo, meses (o 'indef.')
         ('Telecable', datos.SOLO_INTERNET, 'Estándar', 300, 25990, 22990, True, 6),
         ('Telecable', datos.DOBLE_PLAY, 'Estándar', 300, 29990, 25990, True, None),
         ('Kölbi', datos.SOLO_INTERNET, 'Internet 300', 300, 14095, 14095, False, None),
@@ -141,12 +145,13 @@ def _planes_entrada():
         ('Claro', datos.DOBLE_PLAY, 'Ultra HD', 300, 23250, 23250, False, None),
         ('Claro', datos.DOBLE_PLAY, 'Ultra HD Plus', 300, 24685, 24685, False, None),
         ('Claro', datos.DOBLE_PLAY, 'Ultra HD 1 Gbps', 1024, 46045, 46045, False, None),
+        ('Liberty', datos.DOBLE_PLAY, 'Mega 120', 120, 27900, 19900, True, 'indef.'),
         ('Tigo', datos.SOLO_INTERNET, 'Internet 500', 500, 28150, 21990, True, 12),
         ('Claro', datos.INTERNET_TELEFONIA, 'Telefonía', 300, 23080, 23080, False, None),
     ]
     return pd.DataFrame([{
         'operador': o, 'servicio': s, 'plan': p, 'mbps': m, 'precio_regular': r, 'precio_vigente': v,
-        'en_promocion': e, 'promo_meses': meses,
+        'en_promocion': e, 'promo_meses': None if meses == 'indef.' else meses, 'promo_indefinida': meses == 'indef.',
     } for o, s, p, m, r, v, e, meses in filas])
 
 
@@ -163,6 +168,7 @@ def test_precios_de_entrada():
     assert vig[('Telecable', datos.COMBO, 300)] == datos.VIGENCIA_SIN_DATO
     assert vig[('Tigo', datos.INTERNET, 500)] == datos.VIGENCIA_LARGA
     assert vig[('Kölbi', datos.INTERNET, 300)] == datos.VIGENCIA_REGULAR
+    assert vig[('Liberty', datos.COMBO, 120)] == datos.VIGENCIA_INDEFINIDA
 
     regular = datos.precios_de_entrada(_planes_entrada(), max_mbps=500, base='regular')
     assert set(regular['vigencia']) == {datos.VIGENCIA_REGULAR}
@@ -189,3 +195,64 @@ def test_resumen_entrada():
     frases = datos.resumen_entrada(datos.precios_de_entrada(planes, max_mbps=500))
     assert frases[-1] == 'En combo, Telecable es el más barato en la única velocidad donde tiene oferta.'
     assert datos.resumen_entrada(entrada.iloc[0:0]) == []
+
+
+def test_plazo_promocion():
+    planes = pd.DataFrame({
+        'en_promocion': [True, True, True, False],
+        'promo_meses': [12, None, None, None],
+        'promo_indefinida': [False, True, False, False],
+    })
+    assert datos.plazo_promocion(planes) == ['12 meses', 'Indefinida', 'Sin dato', '']
+
+
+def _planes_resumen():
+    filas = [
+        # operador, servicio, plan, mbps, regular, vigente
+        ('Telecable', datos.DOBLE_PLAY, 'Básico', 150, 25990, 25990),
+        ('Telecable', datos.DOBLE_PLAY, 'Estándar', 300, 29990, 25990),
+        ('Telecable', datos.DOBLE_PLAY, 'Experto', 1000, 55990, 55990),
+        ('Tigo', datos.DOBLE_PLAY, 'Combo 125', 125, 20990, 18500),
+        ('Claro', datos.DOBLE_PLAY, 'Ultra HD 300', 300, 25600, 26500),
+        ('Claro', datos.DOBLE_PLAY, 'Ultra HD 1 Gbps', 1000, 45390, 45390),
+        ('Liberty', datos.DOBLE_PLAY, 'Mega 200', 200, 28900, 28900),
+        ('Telecable', datos.SOLO_INTERNET, 'Ideal', 600, 28990, 28990),
+        ('Claro', datos.SOLO_INTERNET, 'Fibra 500', 500, 33000, 33000),
+    ]
+    return pd.DataFrame([{
+        'operador': o, 'servicio': s, 'plan': p, 'mbps': m, 'rango': datos.rango_velocidad(m), 'precio_regular': r,
+        'precio_vigente': v, 'en_promocion': v < r, 'promo_meses': 12 if o == 'Tigo' else None,
+        'promo_indefinida': False, 'link': None,
+    } for o, s, p, m, r, v in filas])
+
+
+def test_posicion_por_rango():
+    pos = datos.posicion_por_rango(_planes_resumen()).set_index(['servicio', 'rango'])
+    hasta = pos.loc[(datos.DOBLE_PLAY, 'Hasta 199 Mbps')]
+    assert hasta['estado'] == datos.PEOR and hasta['rival'] == 'Tigo' and hasta['plazo_rival'] == '12 meses'
+    assert hasta['diferencia'] == 25990 - 18500
+    assert pos.loc[(datos.DOBLE_PLAY, '200–299 Mbps'), 'estado'] == datos.SIN_PLAN
+    # ₡25.990 frente a ₡26.500: 1,9 % más barato, dentro de la tolerancia de 3 %
+    assert pos.loc[(datos.DOBLE_PLAY, '300–499 Mbps'), 'estado'] == datos.IGUAL
+    assert pos.loc[(datos.DOBLE_PLAY, '1 Gbps o más'), 'estado'] == datos.PEOR
+    assert pos.loc[(datos.SOLO_INTERNET, '500–749 Mbps'), 'estado'] == datos.MEJOR
+
+    regular = datos.posicion_por_rango(_planes_resumen(), 'regular').set_index(['servicio', 'rango'])
+    assert regular.loc[(datos.DOBLE_PLAY, '300–499 Mbps'), 'precio'] == 29990
+    assert regular.loc[(datos.DOBLE_PLAY, '300–499 Mbps'), 'estado'] == datos.PEOR
+
+
+def test_cara_a_cara_y_hallazgos():
+    cara = datos.cara_a_cara(_planes_resumen()).set_index(['rival', 'servicio'])
+    claro = cara.loc[('Claro', datos.DOBLE_PLAY)]
+    assert (claro['rangos'], claro[datos.IGUAL], claro[datos.PEOR]) == (2, 1, 1)
+    assert cara.loc[('Claro', datos.SOLO_INTERNET), datos.MEJOR] == 1
+
+    planes = _planes_resumen()
+    textos = [t for _, t in datos.hallazgos(planes, datos.posicion_por_rango(planes))]
+    assert textos[0] == ('En Internet + TV, Telecable tiene el mejor precio en 0 de 3 rangos de velocidad, un precio '
+                         'similar en 1 y es más caro en 2.')
+    assert any(t.startswith('La mayor desventaja está en Internet + TV de hasta 199 Mbps: Tigo cobra ₡18.500') for t in textos)
+    assert any('no tiene plan en Internet + TV de 200–299 Mbps' for t in textos)
+    assert any(t.startswith('La oferta más agresiva del mercado es Tigo Internet + TV 125 Mbps a ₡18.500 en promoción '
+                            '(12 meses, regular ₡20.990)') for t in textos)

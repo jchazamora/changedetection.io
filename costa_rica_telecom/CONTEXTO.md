@@ -66,3 +66,15 @@ El dashboard toma como principal cualquier watch del grupo `Principal`.
    Settings → Notifications. Por ejemplo, con Gmail y una contraseña de aplicación:
    `mailtos://usuario:contraseña_app@gmail.com?to=destino@correo.com`. Hace falta que el usuario
    indique la cuenta de envío y el correo de destino. No guardar contraseñas en el repo.
+
+## Actualización (29/10/2026, sesión en la nube)
+
+- La app publicada (Streamlit Community Cloud) usa `costa_rica_telecom/dashboard/app.py` de esta rama.
+- Página nueva de inicio **Resumen ejecutivo** (pedido de la jefatura: muy visual, poco gráfico, legible para un
+  director): semáforo por rango de velocidad, conclusiones en frases y cara a cara por competidor. Lógica en
+  `datos.posicion_por_rango`, `datos.cara_a_cara` y `datos.hallazgos`.
+- Página **Precios de entrada**: tabla velocidad × operador como la diapositiva de la jefatura, con la vigencia de cada
+  promoción.
+- Internet + TV de los cinco operadores viene de la BD Máster, octubre 2026, región Central
+  (`importar_bd_maestra.py`). Solo Internet sigue siendo la captura de los sitios del 28/10/2026.
+- En la BD Máster, Telecable tiene precios distintos en Huetar Norte y Pacífico Central; el dashboard usa Central.

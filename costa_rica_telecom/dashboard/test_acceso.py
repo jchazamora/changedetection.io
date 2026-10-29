@@ -32,25 +32,30 @@ def _ingresar(at, usuario, clave):
     return at.run()
 
 
+def _dashboard_visible(at):
+    # La página de inicio es el resumen ejecutivo
+    return any(s.value == 'Lo que hay que saber' for s in at.subheader)
+
+
 def test_sin_usuarios_abre_directo():
     at = _app(otro_secreto='x')
     assert not at.text_input
-    assert at.metric
+    assert _dashboard_visible(at)
 
 
 def test_pide_usuario_y_contrasena():
     at = _app(usuarios={'ana': 'clave-larga'})
     assert [t.label for t in at.text_input] == ['Usuario', 'Contraseña']
-    assert not at.metric
+    assert not _dashboard_visible(at)
 
     at = _ingresar(at, 'ana', 'otra')
     assert at.error[0].value == 'Usuario o contraseña incorrectos.'
-    assert not at.metric
+    assert not _dashboard_visible(at)
 
     at = _ingresar(at, 'Ana', 'clave-larga')
     assert at.session_state['usuario'] == 'ana'
     assert not at.text_input
-    assert at.metric
+    assert _dashboard_visible(at)
 
     next(b for b in at.button if b.label == 'Cerrar sesión').click()
     at.run()

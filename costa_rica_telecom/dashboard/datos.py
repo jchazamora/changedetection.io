@@ -2,8 +2,9 @@
 Precios de los planes capturados a mano (Telecable y la competencia), en tablas listas para el dashboard.
 
 Cada operador tiene dos listas de planes: 'internet_y_tv' (combos) y 'solo_internet'. Cada plan trae 'precio'
-(el vigente) y, cuando hay promoción, 'precio_anterior' (el regular) y opcionalmente 'promo_meses' (cuánto dura la
-promoción; si falta, se busca en el nombre del plan, como en "(promo 4 meses)").
+(el vigente) y, cuando hay promoción, 'precio_anterior' (el regular) y opcionalmente 'vigencia' (cuánto dura la
+promoción, como en la BD Máster: "12 meses", "promocional 6 meses", "Permanente", "Indefinido") o 'promo_meses'.
+Si faltan, la duración se busca en el nombre del plan, como en "(promo 4 meses)".
 """
 
 import json
@@ -37,14 +38,15 @@ ETIQUETAS_RANGO = [etiqueta for _, _, etiqueta in RANGOS]
 
 COLUMNAS = [
     'operador', 'servicio', 'plan', 'velocidad', 'mbps', 'rango', 'precio_regular', 'precio_promocional',
-    'precio_vigente', 'en_promocion', 'promo_meses', 'link', 'fecha', 'fuente',
+    'precio_vigente', 'en_promocion', 'promo_meses', 'promo_indefinida', 'link', 'fecha', 'fuente',
 ]
 
 # "300 Mbps + TV", "1 Gbps", "150 Mbps simétrico" / "Mega 120", "120 MEGAS"
 _VELOCIDAD = re.compile(r'(\d+(?:[.,]\d+)?)\s*([gm])bps', re.IGNORECASE)
 _MEGAS = re.compile(r'megas?\s*(\d+)|(\d+)\s*megas?', re.IGNORECASE)
-# "(promo 4 meses)", "promoción por 6 meses"
+# "(promo 4 meses)" en el nombre del plan; "12 meses", "promoción por 6 meses" en la vigencia
 _MESES_PROMO = re.compile(r'promo\w*\s*(?:de\s+|por\s+)?(\d+)\s*mes', re.IGNORECASE)
+_MESES = re.compile(r'(\d+)\s*mes', re.IGNORECASE)
 
 
 def velocidad_mbps(*textos):
@@ -95,11 +97,17 @@ def velocidad_texto(mbps):
 
 
 def meses_de_promocion(plan):
-    """Duración de la promoción en meses: el campo 'promo_meses' o lo que diga el nombre del plan, o None."""
+    """Duración de la promoción en meses: 'promo_meses', la 'vigencia' o lo que diga el nombre del plan, o None."""
     if plan.get('promo_meses'):
         return int(plan['promo_meses'])
-    m = _MESES_PROMO.search(plan.get('plan', ''))
+    m = _MESES.search(plan.get('vigencia') or '') or _MESES_PROMO.search(plan.get('plan', ''))
     return int(m.group(1)) if m else None
+
+
+def promocion_indefinida(plan):
+    """La BD Máster marca con "Permanente" o "Indefinido" las promociones sin fecha de fin."""
+    texto = (plan.get('vigencia') or '').lower()
+    return 'indefinid' in texto or 'permanente' in texto
 
 
 def _servicio(clave, plan):
@@ -127,6 +135,7 @@ def _filas(operador, fuente, fecha, planes_por_servicio):
                 'precio_vigente': float(p['precio']),
                 'en_promocion': promocional is not None,
                 'promo_meses': meses_de_promocion(p) if promocional is not None else None,
+                'promo_indefinida': promocional is not None and promocion_indefinida(p),
                 'link': p.get('link'),
                 'fecha': fecha,
                 'fuente': fuente,
@@ -141,14 +150,16 @@ def cargar_planes(ruta_telecable=RUTA_TELECABLE, ruta_competidores=RUTA_COMPETID
         with open(ruta_telecable, encoding='utf-8') as f:
             t = json.load(f)
         filas += _filas(PRINCIPAL, t['fuente'], t['fecha'], t)
-        notas.append({'operador': PRINCIPAL, 'fecha': t['fecha'], 'fuente': t['fuente'], 'nota': t.get('_nota', '')})
+        notas.append({'operador': PRINCIPAL, 'fecha': t['fecha'], 'fuente': t['fuente'],
+                      'nota': ' '.join(filter(None, [t.get('_nota'), t.get('bd_maestra')]))})
     if os.path.exists(ruta_competidores):
         with open(ruta_competidores, encoding='utf-8') as f:
             c = json.load(f)
         for op in c['operadores']:
             fecha = op.get('fecha', c.get('fecha'))
             filas += _filas(op['operador'], op['fuente'], fecha, op)
-            notas.append({'operador': op['operador'], 'fecha': fecha, 'fuente': op['fuente'], 'nota': op.get('nota', '')})
+            notas.append({'operador': op['operador'], 'fecha': fecha, 'fuente': op['fuente'],
+                          'nota': ' '.join(filter(None, [op.get('nota'), op.get('bd_maestra')]))})
     return pd.DataFrame(filas, columns=COLUMNAS), notas
 
 
@@ -215,17 +226,31 @@ COMBO = 'Combo'
 
 VIGENCIA_CORTA = 'Promoción de hasta 6 meses'
 VIGENCIA_LARGA = 'Promoción de más de 6 meses'
+VIGENCIA_INDEFINIDA = 'Promoción indefinida'
 VIGENCIA_SIN_DATO = 'Promoción sin plazo publicado'
-VIGENCIA_REGULAR = 'Precio regular, sin plazo'
-VIGENCIAS = [VIGENCIA_CORTA, VIGENCIA_LARGA, VIGENCIA_SIN_DATO, VIGENCIA_REGULAR]
+VIGENCIA_REGULAR = 'Precio regular'
+VIGENCIAS = [VIGENCIA_CORTA, VIGENCIA_LARGA, VIGENCIA_INDEFINIDA, VIGENCIA_SIN_DATO, VIGENCIA_REGULAR]
 
 
-def vigencia(en_promocion, meses):
+def vigencia(en_promocion, meses, indefinida=False):
     if not en_promocion:
         return VIGENCIA_REGULAR
+    if indefinida:
+        return VIGENCIA_INDEFINIDA
     if meses is None or pd.isna(meses):
         return VIGENCIA_SIN_DATO
     return VIGENCIA_CORTA if meses <= 6 else VIGENCIA_LARGA
+
+
+def plazo_promocion(planes):
+    """Texto de la vigencia de la promoción de cada plan: '12 meses', 'Indefinida', 'Sin dato' o vacío sin promoción."""
+    def texto(promo, meses, indefinida):
+        if not promo:
+            return ''
+        if indefinida:
+            return 'Indefinida'
+        return f'{int(meses)} meses' if meses is not None and not pd.isna(meses) else 'Sin dato'
+    return [texto(*fila) for fila in zip(planes['en_promocion'], planes['promo_meses'], planes['promo_indefinida'])]
 
 
 def precios_de_entrada(planes, max_mbps=None, base='vigente'):
@@ -236,7 +261,7 @@ def precios_de_entrada(planes, max_mbps=None, base='vigente'):
     df['tipo'] = df['servicio'].map({SOLO_INTERNET: INTERNET, DOBLE_PLAY: COMBO})
     # Con el precio regular no hay promoción que mostrar
     promo = df['en_promocion'] & (base != 'regular')
-    df['vigencia'] = [vigencia(p, m) for p, m in zip(promo, df['promo_meses'])]
+    df['vigencia'] = [vigencia(p, m, i) for p, m, i in zip(promo, df['promo_meses'], df['promo_indefinida'])]
     df = df.sort_values('precio').drop_duplicates(['mbps', 'operador', 'tipo'])
     return df.sort_values(['mbps', 'tipo']).reset_index(drop=True)
 
@@ -300,3 +325,180 @@ def resumen_entrada(entrada, principal=PRINCIPAL):
                          f'oferta; en las demás está en promedio {diferencia} por encima del más barato')
         frases.append(frase + '.')
     return frases
+
+
+# --- Resumen ejecutivo: dónde está Telecable frente a la competencia ------------------------------
+
+# Una diferencia de hasta 3 % se considera precio similar
+TOLERANCIA_IGUAL = 0.03
+
+MEJOR = 'mejor'               # Telecable es el más barato del rango
+IGUAL = 'igual'               # Telecable está a no más de 3 % del más barato
+PEOR = 'peor'                 # algún competidor es más barato
+SIN_PLAN = 'sin_plan'         # la competencia tiene planes en el rango y Telecable no
+SOLO_TELECABLE = 'solo_telecable'
+
+_NOMBRE_SERVICIO = {DOBLE_PLAY: 'Internet + TV', SOLO_INTERNET: 'Solo Internet'}
+
+
+def nombre_servicio(servicio):
+    return _NOMBRE_SERVICIO.get(servicio, servicio)
+
+
+def rango_texto(rango):
+    """'Hasta 199 Mbps' -> 'hasta 199 Mbps', para usarlo dentro de una frase."""
+    return rango[0].lower() + rango[1:] if rango.startswith('Hasta') else rango
+
+
+def _estado(propio, rival):
+    dif = (propio - rival) / rival
+    if dif < -TOLERANCIA_IGUAL:
+        return MEJOR
+    return IGUAL if dif <= TOLERANCIA_IGUAL else PEOR
+
+
+def _con_vigencia(df):
+    df = df.copy()
+    df['vigencia'] = [vigencia(p, m, i) for p, m, i in zip(df['en_promocion'], df['promo_meses'], df['promo_indefinida'])]
+    df['plazo'] = plazo_promocion(df)
+    return df
+
+
+def _mejores_por_servicio(df):
+    """mejor_por_rango por separado para cada servicio (el más barato de cada operador, rango y servicio)."""
+    partes = [mejor_por_rango(df[df['servicio'] == s]) for s in df['servicio'].unique()]
+    return pd.concat(partes, ignore_index=True) if partes else df.iloc[0:0].assign(rango=None)
+
+
+def posicion_por_rango(planes, base='vigente', principal=PRINCIPAL):
+    """Por servicio y rango de velocidad: el plan más barato de Telecable frente al más barato de la competencia."""
+    df = _con_vigencia(con_precio(planes[planes['servicio'].isin([DOBLE_PLAY, SOLO_INTERNET])], base))
+    if base == 'regular':
+        df['plazo'] = ''
+    mejores = _mejores_por_servicio(df)
+    filas = []
+    for servicio in (DOBLE_PLAY, SOLO_INTERNET):
+        for etiqueta in ETIQUETAS_RANGO:
+            en_rango = mejores[(mejores['servicio'] == servicio) & (mejores['rango'] == etiqueta)]
+            if en_rango.empty:
+                continue
+            propio = en_rango[en_rango['operador'] == principal]
+            otros = en_rango[en_rango['operador'] != principal]  # del más barato al más caro
+            fila = {'servicio': servicio, 'rango': etiqueta, 'competidores': len(otros)}
+            if not propio.empty:
+                p = propio.iloc[0]
+                fila.update(plan=p['plan'], mbps=p['mbps'], precio=p['precio'], plazo=p['plazo'], link=p['link'])
+            if not otros.empty:
+                r = otros.iloc[0]
+                fila.update(rival=r['operador'], plan_rival=r['plan'], mbps_rival=r['mbps'], precio_rival=r['precio'],
+                            plazo_rival=r['plazo'], link_rival=r['link'],
+                            mas_baratos=int((otros['precio'] < fila.get('precio', math.inf)).sum()))
+            if propio.empty:
+                fila['estado'] = SIN_PLAN
+            elif otros.empty:
+                fila['estado'] = SOLO_TELECABLE
+            else:
+                fila['estado'] = _estado(fila['precio'], fila['precio_rival'])
+                fila['diferencia'] = fila['precio'] - fila['precio_rival']
+                fila['diferencia_pct'] = fila['diferencia'] / fila['precio_rival']
+            filas.append(fila)
+    columnas = ['servicio', 'rango', 'estado', 'plan', 'mbps', 'precio', 'plazo', 'link', 'competidores', 'rival',
+                'plan_rival', 'mbps_rival', 'precio_rival', 'plazo_rival', 'link_rival', 'mas_baratos', 'diferencia',
+                'diferencia_pct']
+    return pd.DataFrame(filas).reindex(columns=columnas)
+
+
+def cara_a_cara(planes, base='vigente', principal=PRINCIPAL):
+    """Por competidor y servicio: en cuántos rangos Telecable es más barato, similar o más caro, y la diferencia típica."""
+    mejores = _mejores_por_servicio(con_precio(planes[planes['servicio'].isin([DOBLE_PLAY, SOLO_INTERNET])], base))
+    filas = []
+    for rival in [op for op in mejores['operador'].unique() if op != principal]:
+        for servicio in (DOBLE_PLAY, SOLO_INTERNET):
+            del_servicio = mejores[mejores['servicio'] == servicio]
+            propios = del_servicio[del_servicio['operador'] == principal].set_index('rango')['precio']
+            suyos = del_servicio[del_servicio['operador'] == rival].set_index('rango')['precio']
+            comunes = propios.index.intersection(suyos.index)
+            if comunes.empty:
+                continue
+            estados = [_estado(propios[r], suyos[r]) for r in comunes]
+            filas.append({
+                'rival': rival, 'servicio': servicio, 'rangos': len(comunes),
+                MEJOR: estados.count(MEJOR), IGUAL: estados.count(IGUAL), PEOR: estados.count(PEOR),
+                'diferencia_pct': ((propios[comunes] - suyos[comunes]) / suyos[comunes]).median(),
+            })
+    return pd.DataFrame(filas, columns=['rival', 'servicio', 'rangos', MEJOR, IGUAL, PEOR, 'diferencia_pct'])
+
+
+def hallazgos(planes, posicion, base='vigente', principal=PRINCIPAL):
+    """Conclusiones en lenguaje simple, cada una marcada como 'bien', 'mal' o 'mercado'."""
+    resultado = []
+    comparables = posicion[posicion['estado'].isin([MEJOR, IGUAL, PEOR])]
+
+    for servicio in (DOBLE_PLAY, SOLO_INTERNET):
+        s = comparables[comparables['servicio'] == servicio]
+        if s.empty:
+            continue
+        n = len(s)
+        mejor, igual, peor = (int((s['estado'] == e).sum()) for e in (MEJOR, IGUAL, PEOR))
+        tono = 'bien' if mejor > peor else 'mal' if peor > mejor else 'mercado'
+        resultado.append((tono, f'En {nombre_servicio(servicio)}, Telecable tiene el mejor precio en {mejor} de {n} rangos '
+                                f'de velocidad, un precio similar en {igual} y es más caro en {peor}.'))
+
+    if not comparables.empty:
+        peor = comparables.sort_values('diferencia_pct', ascending=False).iloc[0]
+        if peor['estado'] == PEOR:
+            resultado.append(('mal', f"La mayor desventaja está en {nombre_servicio(peor['servicio'])} de "
+                                     f"{rango_texto(peor['rango'])}: {peor['rival']} cobra {colones(peor['precio_rival'])} por "
+                                     f"{velocidad_texto(peor['mbps_rival'])}, {colones(peor['diferencia'])} "
+                                     f"({peor['diferencia_pct'] * 100:.0f} %) menos que Telecable."))
+        mejor = comparables.sort_values('diferencia_pct').iloc[0]
+        if mejor['estado'] == MEJOR:
+            resultado.append(('bien', f"La mayor ventaja está en {nombre_servicio(mejor['servicio'])} de "
+                                      f"{rango_texto(mejor['rango'])}: Telecable cobra {colones(mejor['precio'])}, "
+                                      f"{colones(-mejor['diferencia'])} ({-mejor['diferencia_pct'] * 100:.0f} %) menos "
+                                      f"que {mejor['rival']}, el más barato de la competencia."))
+
+    sin_plan = posicion[posicion['estado'] == SIN_PLAN]
+    if not sin_plan.empty:
+        huecos = [f"{nombre_servicio(f['servicio'])} de {rango_texto(f['rango'])}" for _, f in sin_plan.iterrows()]
+        resultado.append(('mercado', f'Telecable no tiene plan en {_lista(huecos)}, donde la competencia sí ofrece.'))
+
+    competencia = _con_vigencia(con_precio(planes[(planes['operador'] != principal)
+                                                  & planes['servicio'].isin([DOBLE_PLAY, SOLO_INTERNET])], base))
+    if not competencia.empty:
+        barato = competencia.sort_values(['precio', 'mbps'], ascending=[True, False]).iloc[0]
+        detalle = f" en promoción ({barato['plazo'].lower()}, regular {colones(barato['precio_regular'])})" \
+            if barato['en_promocion'] and base != 'regular' else ''
+        resultado.append(('mercado', f"La oferta más agresiva del mercado es {barato['operador']} "
+                                     f"{nombre_servicio(barato['servicio'])} {velocidad_texto(barato['mbps'])} a "
+                                     f"{colones(barato['precio'])}{detalle}."))
+        if base != 'regular':
+            promos = competencia[competencia['en_promocion']]
+            largas = promos[promos['vigencia'].isin([VIGENCIA_LARGA, VIGENCIA_INDEFINIDA])]
+            if not promos.empty:
+                resultado.append(('mercado', f'{len(promos)} de {len(competencia)} planes de la competencia están en '
+                                             f'promoción; {len(largas)} de ellos por más de 6 meses o sin fecha de fin, '
+                                             'así que no son descuentos pasajeros.'))
+
+    if not comparables.empty:
+        contra = comparables[comparables['estado'] == PEOR]['rival'].value_counts()
+        if not contra.empty:
+            resultado.append(('mal', f'{contra.index[0]} es el competidor que más presiona: es el más barato frente a '
+                                     f'Telecable en {contra.iloc[0]} de {len(comparables)} rangos de velocidad.'))
+    return resultado
+
+
+_NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre',
+                'noviembre', 'diciembre']
+
+
+def mes_bd_maestra(ruta=RUTA_COMPETIDORES):
+    """'octubre 2026' si los precios de Internet + TV vienen de la BD Máster (ver importar_bd_maestra.py), o None."""
+    if not os.path.exists(ruta):
+        return None
+    with open(ruta, encoding='utf-8') as f:
+        mes = json.load(f).get('mes_bd_maestra')
+    if not mes:
+        return None
+    anio, numero = mes.split('-')
+    return f'{_NOMBRES_MES[int(numero) - 1]} {anio}'
