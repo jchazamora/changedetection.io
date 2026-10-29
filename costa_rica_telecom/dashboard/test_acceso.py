@@ -34,7 +34,7 @@ def _ingresar(at, usuario, clave):
 
 def _dashboard_visible(at):
     # La página de inicio es el resumen ejecutivo
-    return any(s.value == 'Lo que hay que saber' for s in at.subheader)
+    return any(s.value == 'En una mirada' for s in at.subheader)
 
 
 def test_sin_usuarios_abre_directo():

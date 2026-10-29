@@ -456,181 +456,258 @@ def pagina_precios():
 
 # --- Página de resumen ejecutivo ------------------------------------------------------------------
 
-# Semáforo: verde Telecable más barato, amarillo similar, rojo la competencia más barata. Cada estado lleva ícono y
-# texto, así que no depende solo del color.
-ESTADOS = {
-    datos.MEJOR: ('bien', '✓', 'Telecable más barato'),
-    datos.IGUAL: ('igual', '=', 'Precio similar'),
-    datos.PEOR: ('mal', '!', 'Competencia más barata'),
-    datos.SIN_PLAN: ('vacio', '–', 'Telecable sin plan'),
-    datos.SOLO_TELECABLE: ('vacio', '–', 'Sin competencia'),
-}
-TONO_HALLAZGO = {'bien': ('bien', '✓'), 'mal': ('mal', '!'), 'mercado': ('mercado', 'i')}
-
+# Pensada para que un director la lea en un minuto. Semáforo: verde Telecable más barato, amarillo similar, rojo la
+# competencia más barata, gris sin plan. Cada estado lleva ícono y texto, así que no depende solo del color.
+# Los fondos son translúcidos y el texto hereda el color del tema, para que funcione en modo claro y oscuro.
 ESTILOS_RESUMEN = """
 <style>
-.tc-r { --verde: #1E7F4F; --amarillo: #E0A800; --rojo: #C62828; --gris: rgba(138, 134, 150, .55); }
-.tc-r .tc-tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: .9rem; }
-.tc-r .tc-tarjeta { border: 1px solid rgba(138, 134, 150, .35); border-radius: .9rem; padding: 1rem 1.1rem; }
-.tc-r .tc-tarjeta h4 { margin: 0 0 .2rem; font-family: Poppins, sans-serif; font-size: 1.1rem; }
-.tc-r .tc-veredicto { font-size: .92rem; opacity: .85; margin-bottom: .7rem; }
-.tc-r .tc-cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
-.tc-r .tc-cifra { border-radius: .7rem; padding: .55rem .6rem; text-align: center; }
-.tc-r .tc-cifra b { display: block; font-family: Poppins, sans-serif; font-size: 2rem; line-height: 1.1; }
-.tc-r .tc-cifra span { font-size: .78rem; }
-.tc-r .bien.tc-cifra { background: rgba(30, 127, 79, .14); color: inherit; border-top: 4px solid var(--verde); }
-.tc-r .igual.tc-cifra { background: rgba(224, 168, 0, .16); border-top: 4px solid var(--amarillo); }
-.tc-r .mal.tc-cifra { background: rgba(198, 40, 40, .12); border-top: 4px solid var(--rojo); }
-.tc-r .tc-nota { font-size: .8rem; opacity: .75; margin-top: .5rem; }
-.tc-r table { width: 100%; border-collapse: separate; border-spacing: 0 .45rem; font-size: .9rem; }
-.tc-r th { text-align: left; padding: .3rem .7rem; font-family: Poppins, sans-serif; font-weight: 600;
-  border-bottom: 3px solid #872F98; white-space: nowrap; }
-.tc-r td { padding: .6rem .7rem; vertical-align: top; background: rgba(138, 134, 150, .09); }
-.tc-r td:first-child { font-weight: 600; white-space: nowrap; border-radius: .6rem 0 0 .6rem; }
-.tc-r td:last-child { border-radius: 0 .6rem .6rem 0; }
-.tc-r td.bien { box-shadow: inset 5px 0 0 var(--verde); }
-.tc-r td.igual { box-shadow: inset 5px 0 0 var(--amarillo); }
-.tc-r td.mal { box-shadow: inset 5px 0 0 var(--rojo); }
-.tc-r td.vacio { box-shadow: inset 5px 0 0 var(--gris); }
-.tc-r .tc-estado { display: inline-flex; align-items: center; gap: .35rem; font-weight: 700; margin-bottom: .2rem; }
-.tc-r .tc-icono { display: inline-flex; width: 1.25rem; height: 1.25rem; border-radius: 50%; align-items: center;
-  justify-content: center; font-size: .78rem; font-weight: 800; color: #FFFFFF; }
-.tc-r .bien .tc-icono, .tc-r .tc-icono.bien { background: var(--verde); }
-.tc-r .igual .tc-icono, .tc-r .tc-icono.igual { background: var(--amarillo); color: #241E2B; }
-.tc-r .mal .tc-icono, .tc-r .tc-icono.mal { background: var(--rojo); }
-.tc-r .vacio .tc-icono { background: var(--gris); }
-.tc-r .tc-icono.mercado { background: #872F98; }
-.tc-r .tc-detalle { line-height: 1.45; }
-.tc-r .tc-detalle a { color: inherit; }
-.tc-r .tc-dif { font-weight: 700; white-space: nowrap; }
-.tc-r .tc-hallazgos { display: grid; gap: .55rem; }
-.tc-r .tc-hallazgo { display: flex; gap: .65rem; align-items: flex-start; padding: .7rem .9rem; border-radius: .7rem;
-  background: rgba(138, 134, 150, .09); line-height: 1.45; }
-.tc-r .tc-hallazgo .tc-icono { flex: none; margin-top: .1rem; }
-.tc-r .tc-chip { display: inline-block; border-radius: 999px; padding: .05rem .55rem; margin: 0 .25rem .25rem 0;
-  font-size: .8rem; font-weight: 600; }
-.tc-r .tc-chip.bien { background: rgba(30, 127, 79, .16); }
-.tc-r .tc-chip.igual { background: rgba(224, 168, 0, .2); }
-.tc-r .tc-chip.mal { background: rgba(198, 40, 40, .14); }
-.tc-r .tc-marco { overflow-x: auto; }
-.tc-r .tc-marco table { min-width: 44rem; }
+.tc-r { --verde: #1E7F4F; --amarillo: #E0A800; --rojo: #C62828; --gris: #8A8696; --morado: #872F98;
+  --txt-verde: #1E7F4F; --txt-rojo: #C62828; --txt-amarillo: #8A6A00;
+  --tarjeta: rgba(138, 134, 150, .06); --borde: rgba(138, 134, 150, .3); }
+@media (prefers-color-scheme: dark) {
+  .tc-r { --txt-verde: #5CC48E; --txt-rojo: #FF7B7B; --txt-amarillo: #F2C94C; }
+}
+.tc-r .tc-suave { opacity: .72; }
+.tc-r a { color: inherit; }
+.tc-r .tc-hero { background: linear-gradient(120deg, #9B3DAF 0%, #872F98 40%, #4E1A59 100%); color: #FFFFFF;
+  border-radius: 1.3rem; padding: 1.8rem 2rem; display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.8rem;
+  align-items: center; box-shadow: 0 16px 36px rgba(78, 26, 89, .22); }
+.tc-r .tc-eti { text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; opacity: .8; font-weight: 600; }
+.tc-r .tc-hero h1 { font-family: Poppins, sans-serif; font-size: 2.2rem; line-height: 1.15; margin: .4rem 0 .7rem;
+  padding: 0; color: #FFFFFF; font-weight: 700; }
+.tc-r .tc-hero p { margin: 0; opacity: .9; line-height: 1.5; }
+.tc-r .tc-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem; }
+.tc-r .tc-chips span { background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 999px; padding: .15rem .75rem; font-size: .78rem; }
+.tc-r .tc-indice { background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 1.1rem; padding: 1.2rem 1.3rem; text-align: center; }
+.tc-r .tc-indice b { display: block; font-family: Poppins, sans-serif; font-size: 3.4rem; line-height: 1; }
+.tc-r .tc-indice span { display: block; font-size: .9rem; opacity: .9; margin-top: .45rem; line-height: 1.4; }
+.tc-r .tc-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: .9rem; }
+.tc-r .tc-kpi { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 1.1rem; padding: 1rem 1.1rem;
+  display: flex; gap: .85rem; align-items: center; }
+.tc-r .tc-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF;
+  font-weight: 800; background: var(--gris); }
+.tc-r .tc-kpi .tc-ic { width: 2.9rem; height: 2.9rem; border-radius: .9rem; font-size: 1.25rem; }
+.tc-r .tc-kpi b { display: block; font-family: Poppins, sans-serif; font-size: 2rem; line-height: 1; }
+.tc-r .tc-kpi span { font-size: .84rem; opacity: .72; }
+.tc-r .bien .tc-ic, .tc-r .tc-ic.bien { background: var(--verde); }
+.tc-r .igual .tc-ic, .tc-r .tc-ic.igual { background: var(--amarillo); color: #241E2B; }
+.tc-r .mal .tc-ic, .tc-r .tc-ic.mal { background: var(--rojo); }
+.tc-r .tc-ic.mercado { background: var(--morado); }
+.tc-r .tc-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem; }
+.tc-r .tc-col { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 6px solid var(--gris);
+  border-radius: 1.1rem; padding: 1.1rem 1.2rem; }
+.tc-r .tc-col.bien { border-top-color: var(--verde); }
+.tc-r .tc-col.mal { border-top-color: var(--rojo); }
+.tc-r .tc-col.mercado { border-top-color: var(--morado); }
+.tc-r .tc-col h4 { margin: 0 0 .7rem; padding: 0; font-size: 1.02rem; display: flex; align-items: center; gap: .5rem; }
+.tc-r .tc-col h4 .tc-ic { width: 1.55rem; height: 1.55rem; border-radius: 50%; font-size: .82rem; }
+.tc-r .tc-col ul { margin: 0; padding-left: 1.1rem; font-size: .9rem; line-height: 1.5; }
+.tc-r .tc-col li { margin-bottom: .5rem; }
+.tc-r .tc-mapa { display: grid; grid-template-columns: 9.5rem 1fr 1fr; gap: .65rem; }
+.tc-r .tc-mapa-tit { font-weight: 700; padding: .1rem .2rem .4rem; border-bottom: 3px solid var(--morado); }
+.tc-r .tc-mapa-rango { display: flex; align-items: center; font-weight: 700; }
+.tc-r .tc-tile { border-radius: 1rem; padding: .85rem 1.05rem; background: var(--tarjeta); border: 1px solid var(--borde);
+  border-left: 8px solid var(--gris); }
+.tc-r .tc-tile.bien { border-left-color: var(--verde); background: linear-gradient(90deg, rgba(30, 127, 79, .14), var(--tarjeta) 65%); }
+.tc-r .tc-tile.igual { border-left-color: var(--amarillo); background: linear-gradient(90deg, rgba(224, 168, 0, .17), var(--tarjeta) 65%); }
+.tc-r .tc-tile.mal { border-left-color: var(--rojo); background: linear-gradient(90deg, rgba(198, 40, 40, .13), var(--tarjeta) 65%); }
+.tc-r .tc-estado { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; opacity: .75; }
+.tc-r .bien .tc-estado { color: var(--txt-verde); opacity: 1; }
+.tc-r .igual .tc-estado { color: var(--txt-amarillo); opacity: 1; }
+.tc-r .mal .tc-estado { color: var(--txt-rojo); opacity: 1; }
+.tc-r .tc-num { font-family: Poppins, sans-serif; font-size: 1.85rem; font-weight: 700; margin: .05rem 0 .2rem; }
+.tc-r .tc-linea { font-size: .86rem; line-height: 1.45; }
+.tc-r .tc-linea span { opacity: .72; }
+.tc-r .tc-rivales { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .9rem; }
+.tc-r .tc-rival { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 1.1rem; padding: 1.05rem 1.15rem; }
+.tc-r .tc-rival-top { display: flex; align-items: center; gap: .55rem; }
+.tc-r .tc-rival-top strong { font-size: 1.15rem; flex: 1; }
+.tc-r .tc-badge { font-size: .72rem; font-weight: 700; border-radius: 999px; padding: .12rem .6rem; }
+.tc-r .tc-badge.mal { background: rgba(198, 40, 40, .14); color: var(--txt-rojo); }
+.tc-r .tc-badge.bien { background: rgba(30, 127, 79, .14); color: var(--txt-verde); }
+.tc-r .tc-badge.igual { background: rgba(224, 168, 0, .2); color: var(--txt-amarillo); }
+.tc-r .tc-frase { margin: .65rem 0 .6rem; font-size: .95rem; }
+.tc-r .tc-barra { display: flex; height: .75rem; border-radius: 999px; overflow: hidden; gap: 3px; }
+.tc-r .tc-seg.bien { background: var(--verde); }
+.tc-r .tc-seg.igual { background: var(--amarillo); }
+.tc-r .tc-seg.mal { background: var(--rojo); }
+.tc-r .tc-leyenda { display: flex; flex-wrap: wrap; gap: .3rem .75rem; font-size: .8rem; margin-top: .55rem; }
+.tc-r .tc-leyenda span { white-space: nowrap; }
+.tc-r .tc-leyenda i { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-right: .3rem; }
+.tc-r i.bien { background: var(--verde); }
+.tc-r i.igual { background: var(--amarillo); }
+.tc-r i.mal { background: var(--rojo); }
+.tc-r .tc-movil { display: none; }
+@media (max-width: 900px) {
+  .tc-r .tc-movil { display: inline; }
+  .tc-r .tc-hero { grid-template-columns: 1fr; padding: 1.3rem 1.3rem; }
+  .tc-r .tc-hero h1 { font-size: 1.6rem; }
+  .tc-r .tc-kpis { grid-template-columns: repeat(2, 1fr); }
+  .tc-r .tc-cols { grid-template-columns: 1fr; }
+  .tc-r .tc-mapa { grid-template-columns: 1fr; }
+  .tc-r .tc-mapa-tit.tc-vacia { display: none; }
+  .tc-r .tc-mapa-rango { margin-top: .6rem; }
+}
+@media (max-width: 600px) {
+  .tc-r .tc-kpi { flex-direction: column; align-items: flex-start; gap: .55rem; }
+}
 </style>
 """
+
+ESTADO_CLASE = {datos.MEJOR: 'bien', datos.IGUAL: 'igual', datos.PEOR: 'mal', datos.SIN_PLAN: 'vacio',
+                datos.SOLO_TELECABLE: 'vacio'}
+ESTADO_TITULO = {datos.MEJOR: 'Telecable más barato', datos.IGUAL: 'Precio similar', datos.PEOR: 'Competencia más barata',
+                 datos.SIN_PLAN: 'Telecable sin plan', datos.SOLO_TELECABLE: 'Sin competencia'}
+COLOR_OPERADOR = {'Kölbi': '#00A19A', 'Claro': '#DA291C', 'Tigo': '#1B3C87', 'Liberty': '#6B3FA0'}
 
 
 def _html_resumen(cuerpo):
     st.html(f'{ESTILOS_RESUMEN}<div class="tc-r">{cuerpo}</div>')
 
 
-def _plan_txt(precio, mbps, plazo, link, operador=None):
-    texto = f"{escape(operador) + ' ' if operador else ''}<b>{escape(datos.colones(precio))}</b> "
-    texto += f'({escape(datos.velocidad_texto(mbps))}'
+def _pct(valor):
+    return f"{'+' if valor > 0 else '−' if valor < 0 else ''}{abs(valor) * 100:.0f} %"
+
+
+def _plazo(plazo):
     if plazo == 'Sin dato':
-        texto += ', en promoción'
-    elif isinstance(plazo, str) and plazo:
-        texto += f', promo {escape(plazo.lower())}'
-    texto += ')'
+        return ' · en promoción'
+    return f' · promo {escape(plazo.lower())}' if isinstance(plazo, str) and plazo else ''
+
+
+def _precio(operador, precio, link):
+    texto = f'{escape(operador)} <b>{escape(datos.colones(precio))}</b>'
     if isinstance(link, str) and link:
         texto = f'<a href="{escape(link)}" target="_blank" rel="noopener">{texto}</a>'
     return texto
 
 
-def tarjetas_resumen(posicion):
-    tarjetas = []
-    for servicio in (datos.DOBLE_PLAY, datos.SOLO_INTERNET):
-        s = posicion[posicion['servicio'] == servicio]
-        if s.empty:
-            continue
-        cuenta = {e: int((s['estado'] == e).sum()) for e in (datos.MEJOR, datos.IGUAL, datos.PEOR, datos.SIN_PLAN)}
-        if cuenta[datos.MEJOR] > cuenta[datos.PEOR]:
-            veredicto = 'Telecable tiene mejor precio en la mayoría de las velocidades.'
-        elif cuenta[datos.PEOR] > cuenta[datos.MEJOR]:
-            veredicto = 'La competencia tiene mejor precio en la mayoría de las velocidades.'
-        else:
-            veredicto = 'Telecable y la competencia están parejos.'
-        cifras = ''.join(
-            f'<div class="tc-cifra {clase}"><b>{cuenta[estado]}</b><span>{texto}</span></div>'
-            for estado, clase, texto in ((datos.MEJOR, 'bien', 'Telecable más barato'),
-                                         (datos.IGUAL, 'igual', 'Precio similar'),
-                                         (datos.PEOR, 'mal', 'Competencia más barata'))
-        )
-        nota = (f'<div class="tc-nota">Rangos de velocidad comparados. En {cuenta[datos.SIN_PLAN]} rango(s) Telecable '
-                'no tiene plan y la competencia sí.</div>' if cuenta[datos.SIN_PLAN] else
-                '<div class="tc-nota">Rangos de velocidad comparados.</div>')
-        tarjetas.append(f'<div class="tc-tarjeta"><h4>{escape(datos.nombre_servicio(servicio))}</h4>'
-                        f'<div class="tc-veredicto">{veredicto}</div><div class="tc-cifras">{cifras}</div>{nota}</div>')
-    _html_resumen(f'<div class="tc-tarjetas">{"".join(tarjetas)}</div>')
-
-
-def _celda_semaforo(fila):
-    if fila is None:
-        return '<td class="vacio"><div class="tc-detalle">Sin planes en este rango.</div></td>'
-    clase, icono, titulo = ESTADOS[fila['estado']]
-    estado = f'<div class="tc-estado"><span class="tc-icono">{icono}</span>{titulo}</div>'
-    if fila['estado'] == datos.SIN_PLAN:
-        detalle = f"La competencia desde {_plan_txt(fila['precio_rival'], fila['mbps_rival'], fila['plazo_rival'], fila['link_rival'], fila['rival'])}."
-    elif fila['estado'] == datos.SOLO_TELECABLE:
-        detalle = f"Telecable {_plan_txt(fila['precio'], fila['mbps'], fila['plazo'], fila['link'])}."
+def hero_resumen(cuenta, origen):
+    comparados = cuenta['comparados']
+    if cuenta[datos.PEOR] > cuenta[datos.MEJOR]:
+        titular = f'La competencia tiene mejor precio en {cuenta[datos.PEOR]} de {comparados} rangos de velocidad'
+    elif cuenta[datos.MEJOR] > cuenta[datos.PEOR]:
+        titular = f'Telecable tiene mejor precio en {cuenta[datos.MEJOR]} de {comparados} rangos de velocidad'
     else:
-        signo = '+' if fila['diferencia'] > 0 else '−' if fila['diferencia'] < 0 else ''
-        dif = (f"{signo}{datos.colones(abs(fila['diferencia']))} ({signo}{abs(fila['diferencia_pct']) * 100:.0f} %)")
-        detalle = (f"Telecable {_plan_txt(fila['precio'], fila['mbps'], fila['plazo'], fila['link'])}<br>"
-                   f"Más barato de la competencia: {_plan_txt(fila['precio_rival'], fila['mbps_rival'], fila['plazo_rival'], fila['link_rival'], fila['rival'])}<br>"
-                   f"Diferencia de Telecable: <span class=\"tc-dif\">{escape(dif)}</span>")
-        if fila['estado'] == datos.PEOR and fila['mas_baratos'] > 1:
-            detalle += f" · {int(fila['mas_baratos'])} competidores cobran menos"
-    return f'<td class="{clase}">{estado}<div class="tc-detalle">{detalle}</div></td>'
+        titular = 'Telecable y la competencia están parejos en precio'
+    tipica = cuenta['tipica']
+    indice = (f'<div class="tc-indice"><b>{_pct(tipica)}</b><span>Telecable frente al competidor más barato<br>'
+              '(diferencia típica en los rangos comparados)</span></div>' if tipica is not None else '')
+    chips = ''.join(f'<span>{escape(c)}</span>' for c in origen)
+    _html_resumen(
+        f'<div class="tc-hero"><div><div class="tc-eti">Posición de precios · Telecable vs. mercado</div>'
+        f'<h1>{escape(titular)}</h1><p>Comparamos el plan más barato de Telecable con el más barato de la competencia '
+        f'en cada rango de velocidad, para Internet + TV y Solo Internet.</p><div class="tc-chips">{chips}</div></div>'
+        f'{indice}</div>'
+    )
 
 
-def semaforo(posicion):
-    filas = []
+def kpis_resumen(cuenta):
+    kpis = ''.join(
+        f'<div class="tc-kpi {clase}"><div class="tc-ic">{icono}</div><div><b>{cuenta[estado]}</b>'
+        f'<span>{texto}</span></div></div>'
+        for estado, clase, icono, texto in (
+            (datos.MEJOR, 'bien', '✓', 'rangos donde somos los más baratos'),
+            (datos.IGUAL, 'igual', '=', 'rangos con precio similar'),
+            (datos.PEOR, 'mal', '!', 'rangos donde la competencia es más barata'),
+            (datos.SIN_PLAN, 'vacio', '–', 'rangos donde no tenemos plan'),
+        )
+    )
+    _html_resumen(f'<div class="tc-kpis">{kpis}</div>')
+
+
+def columnas_resumen(posicion, hallazgos):
+    comparables = posicion[posicion['estado'].isin([datos.MEJOR, datos.IGUAL, datos.PEOR])]
+
+    def donde(f):
+        return f"<b>{escape(datos.nombre_servicio(f['servicio']))} {escape(datos.rango_texto(f['rango']))}</b>"
+
+    bien = [f"{donde(f)}: {escape(datos.colones(f['precio']))}, {_pct(f['diferencia_pct'])} frente a {escape(f['rival'])}."
+            for _, f in comparables[comparables['estado'] == datos.MEJOR].sort_values('diferencia_pct').iterrows()]
+    bien += [f"{donde(f)}: precio similar a {escape(f['rival'])} ({_pct(f['diferencia_pct'])})."
+             for _, f in comparables[comparables['estado'] == datos.IGUAL].iterrows()]
+    mal = [f"{donde(f)}: {escape(f['rival'])} cobra {escape(datos.colones(f['precio_rival']))} "
+           f"({escape(datos.velocidad_texto(f['mbps_rival']))}), Telecable {escape(datos.colones(f['precio']))} → "
+           f"<b>{_pct(f['diferencia_pct'])}</b>."
+           for _, f in comparables[comparables['estado'] == datos.PEOR]
+           .sort_values('diferencia_pct', ascending=False).head(4).iterrows()]
+    mercado = [escape(texto) for tono, texto in hallazgos if tono == 'mercado']
+
+    def columna(clase, icono, titulo, items, vacio):
+        lista = ''.join(f'<li>{i}</li>' for i in items) or f'<li>{vacio}</li>'
+        return (f'<div class="tc-col {clase}"><h4><span class="tc-ic {clase}">{icono}</span>{titulo}</h4>'
+                f'<ul>{lista}</ul></div>')
+
+    _html_resumen(
+        '<div class="tc-cols">'
+        + columna('bien', '✓', 'Dónde estamos bien', bien, 'En ningún rango Telecable es el más barato.')
+        + columna('mal', '!', 'Dónde estamos mal', mal, 'En ningún rango la competencia es más barata.')
+        + columna('mercado', 'i', 'Cómo se mueve el mercado', mercado, 'Sin datos de la competencia.')
+        + '</div>'
+    )
+
+
+def _tile(f):
+    if f is None:
+        return '<div class="tc-tile"><div class="tc-estado">Sin planes</div></div>'
+    clase = ESTADO_CLASE[f['estado']]
+    titulo = f'<div class="tc-estado">{ESTADO_TITULO[f["estado"]]}</div>'
+    if f['estado'] == datos.SIN_PLAN:
+        return (f'<div class="tc-tile {clase}">{titulo}<div class="tc-num">—</div><div class="tc-linea">Competencia desde '
+                f"{_precio(f['rival'], f['precio_rival'], f['link_rival'])} <span>· "
+                f"{escape(datos.velocidad_texto(f['mbps_rival']))}{_plazo(f['plazo_rival'])}</span></div></div>")
+    if f['estado'] == datos.SOLO_TELECABLE:
+        return (f'<div class="tc-tile {clase}">{titulo}<div class="tc-num">—</div><div class="tc-linea">'
+                f"{_precio(datos.PRINCIPAL, f['precio'], f['link'])} <span>· {escape(datos.velocidad_texto(f['mbps']))}"
+                f"</span></div></div>")
+    return (f'<div class="tc-tile {clase}">{titulo}<div class="tc-num">{_pct(f["diferencia_pct"])}</div>'
+            f"<div class=\"tc-linea\">{_precio(datos.PRINCIPAL, f['precio'], f['link'])} <span>· "
+            f"{escape(datos.velocidad_texto(f['mbps']))}{_plazo(f['plazo'])}</span></div>"
+            f"<div class=\"tc-linea\">{_precio(f['rival'], f['precio_rival'], f['link_rival'])} <span>· "
+            f"{escape(datos.velocidad_texto(f['mbps_rival']))}{_plazo(f['plazo_rival'])}</span></div></div>")
+
+
+def mapa_precios(posicion):
+    celdas = ('<div class="tc-mapa-tit tc-vacia">Velocidad</div><div class="tc-mapa-tit tc-vacia">Internet + TV</div>'
+              '<div class="tc-mapa-tit tc-vacia">Solo Internet</div>')
     for rango in [r for r in datos.ETIQUETAS_RANGO if (posicion['rango'] == r).any()]:
-        celdas = ''
+        celdas += f'<div class="tc-mapa-rango">{escape(rango)}</div>'
         for servicio in (datos.DOBLE_PLAY, datos.SOLO_INTERNET):
             f = posicion[(posicion['rango'] == rango) & (posicion['servicio'] == servicio)]
-            celdas += _celda_semaforo(None if f.empty else f.iloc[0])
-        filas.append(f'<tr><td>{escape(rango)}</td>{celdas}</tr>')
-    _html_resumen(
-        '<div class="tc-marco"><table><thead><tr><th>Velocidad</th><th>Internet + TV</th><th>Solo Internet</th></tr>'
-        f'</thead><tbody>{"".join(filas)}</tbody></table></div>'
-    )
+            tile = _tile(None if f.empty else f.iloc[0])
+            # En pantallas angostas el mapa queda en una columna: cada tarjeta dice a qué servicio corresponde
+            celdas += tile.replace('<div class="tc-estado">',
+                                   f'<div class="tc-estado"><span class="tc-movil">{escape(datos.nombre_servicio(servicio))} · </span>', 1)
+    _html_resumen(f'<div class="tc-mapa">{celdas}</div>')
 
 
-def lista_hallazgos(lista):
-    items = ''.join(
-        f'<div class="tc-hallazgo"><span class="tc-icono {TONO_HALLAZGO[tono][0]}">{TONO_HALLAZGO[tono][1]}</span>'
-        f'<div>{escape(texto)}</div></div>'
-        for tono, texto in lista
-    )
-    _html_resumen(f'<div class="tc-hallazgos">{items}</div>')
-
-
-def tabla_cara_a_cara(cara):
-    filas = []
-    for rival in cara['rival'].unique():
-        celdas = ''
-        for servicio in (datos.DOBLE_PLAY, datos.SOLO_INTERNET):
-            f = cara[(cara['rival'] == rival) & (cara['servicio'] == servicio)]
-            if f.empty:
-                celdas += '<td class="vacio">No compiten en los mismos rangos.</td>'
-                continue
-            f = f.iloc[0]
-            clase = 'bien' if f[datos.MEJOR] > f[datos.PEOR] else 'mal' if f[datos.PEOR] > f[datos.MEJOR] else 'igual'
-            chips = ''.join(
-                f'<span class="tc-chip {c}">{texto} en {int(f[e])}</span>'
-                for e, c, texto in ((datos.MEJOR, 'bien', 'Telecable más barato'), (datos.IGUAL, 'igual', 'Similar'),
-                                    (datos.PEOR, 'mal', f'{rival} más barato')) if f[e]
-            )
-            tipica = f['diferencia_pct'] * 100
-            lectura = (f'Telecable suele estar {abs(tipica):.0f} % {"por encima" if tipica > 0 else "por debajo"}'
-                       if abs(tipica) >= 0.5 else 'Precios típicamente iguales')
-            celdas += (f'<td class="{clase}"><div>{chips}</div><div class="tc-detalle">{lectura} '
-                       f'(de {int(f["rangos"])} rangos comparados).</div></td>')
-        filas.append(f'<tr><td>{escape(rival)}</td>{celdas}</tr>')
-    _html_resumen(
-        '<div class="tc-marco"><table><thead><tr><th>Competidor</th><th>Internet + TV</th><th>Solo Internet</th></tr>'
-        f'</thead><tbody>{"".join(filas)}</tbody></table></div>'
-    )
+def tarjetas_rivales(rivales):
+    tarjetas = ''
+    for _, r in rivales.iterrows():
+        tipica = r['diferencia_pct'] * 100
+        if tipica > 0.5:
+            clase, insignia, frase = 'mal', 'Presiona', f'Telecable suele estar <b>{abs(tipica):.0f} % más caro</b>'
+        elif tipica < -0.5:
+            clase, insignia, frase = 'bien', 'Ventaja', f'Telecable suele estar <b>{abs(tipica):.0f} % más barato</b>'
+        else:
+            clase, insignia, frase = 'igual', 'Parejo', 'Precios <b>parejos</b>'
+        barra = ''.join(f'<span class="tc-seg {c}" style="flex:{int(r[e])}"></span>'
+                        for e, c in ((datos.MEJOR, 'bien'), (datos.IGUAL, 'igual'), (datos.PEOR, 'mal')) if r[e])
+        color = COLOR_OPERADOR.get(r['rival'], '#8A8696')
+        tarjetas += (
+            f'<div class="tc-rival"><div class="tc-rival-top"><i style="display:inline-block;width:.85rem;height:.85rem;'
+            f'border-radius:50%;background:{color}"></i><strong>{escape(r["rival"])}</strong>'
+            f'<span class="tc-badge {clase}">{insignia}</span></div><div class="tc-frase">{frase}</div>'
+            f'<div class="tc-barra">{barra}</div><div class="tc-leyenda">'
+            f'<span><i class="bien"></i>Ganamos {int(r[datos.MEJOR])}</span>'
+            f'<span><i class="igual"></i>Similar {int(r[datos.IGUAL])}</span>'
+            f'<span><i class="mal"></i>Perdemos {int(r[datos.PEOR])}</span></div>'
+            f'<div class="tc-linea tc-suave" style="margin-top:.45rem">de {int(r["rangos"])} rangos comparados '
+            '(Internet + TV y Solo Internet)</div></div>'
+        )
+    _html_resumen(f'<div class="tc-rivales">{tarjetas}</div>')
 
 
 def pagina_resumen():
@@ -640,36 +717,37 @@ def pagina_resumen():
         st.warning('Todavía no hay precios: se cargan de precios_telecable_manual.json y precios_competidores_manual.json.')
         return
     fechas = sorted(n['fecha'] for n in notas if n.get('fecha'))
-    origen = [f"Solo Internet: sitios web al {fecha_corta(fechas[-1])}" if fechas else 'Solo Internet: sitios web']
+    origen = [f'Solo Internet: sitios web al {fecha_corta(fechas[-1])}' if fechas else 'Solo Internet: sitios web']
     mes = datos.mes_bd_maestra()
     if mes:
         origen.insert(0, f'Internet + TV: BD Máster {mes}, región Central')
-    encabezado(
-        'Resumen ejecutivo',
-        'Dónde Telecable tiene mejor precio, dónde está igual y dónde la competencia es más barata, comparando el '
-        'plan más barato de cada operador en cada rango de velocidad.',
-        chips=[*origen, f'Similar = diferencia de hasta {datos.TOLERANCIA_IGUAL * 100:.0f} %'],
-    )
+    origen.append(f'Similar = diferencia de hasta {datos.TOLERANCIA_IGUAL * 100:.0f} %')
+
+    # El encabezado va arriba del selector, pero depende de lo que se elija en él
+    cabeza = st.container()
     base = st.segmented_control(
         'Precio a comparar', ['Vigente', 'Regular'], default='Vigente', required=True, key='base_resumen',
         help='Vigente: con la promoción, si el plan tiene una. Regular: el precio sin promoción.',
     ).lower()
-
     posicion = datos.posicion_por_rango(planes, base)
-    tarjetas_resumen(posicion)
+    cuenta = datos.conteo_estados(posicion)
 
-    st.subheader('Lo que hay que saber')
-    lista_hallazgos(datos.hallazgos(planes, posicion, base))
+    with cabeza:
+        hero_resumen(cuenta, origen)
+        kpis_resumen(cuenta)
 
-    st.subheader('Semáforo por velocidad')
-    st.caption('Cada fila compara el plan más barato de Telecable con el más barato de la competencia en ese rango. '
-               'Los precios abren la página del plan.')
-    semaforo(posicion)
+    st.subheader('En una mirada')
+    st.caption('Lo que hay que saber, en tres columnas.')
+    columnas_resumen(posicion, datos.hallazgos(planes, posicion, base))
+
+    st.subheader('Mapa de precios por velocidad')
+    st.caption('El número grande es cuánto más caro (+) o más barato (−) está Telecable frente al competidor más barato '
+               'del rango. Los precios abren la página del plan.')
+    mapa_precios(posicion)
 
     st.subheader('Frente a cada competidor')
-    st.caption('En cuántos rangos de velocidad Telecable es más barato, similar o más caro que cada competidor, y la '
-               'diferencia típica (mediana).')
-    tabla_cara_a_cara(datos.cara_a_cara(planes, base))
+    st.caption('Rangos de velocidad donde Telecable gana, empata o pierde contra cada uno, y su diferencia típica.')
+    tarjetas_rivales(datos.resumen_por_rival(datos.cara_a_cara(planes, base)))
 
 
 # --- Página de precios de entrada (Internet solo y combo por velocidad) ---------------------------

@@ -429,6 +429,30 @@ def cara_a_cara(planes, base='vigente', principal=PRINCIPAL):
     return pd.DataFrame(filas, columns=['rival', 'servicio', 'rangos', MEJOR, IGUAL, PEOR, 'diferencia_pct'])
 
 
+def conteo_estados(posicion):
+    """Cuántos rangos hay en cada estado, y la diferencia típica (mediana) de Telecable frente al más barato."""
+    cuenta = {e: int((posicion['estado'] == e).sum()) for e in (MEJOR, IGUAL, PEOR, SIN_PLAN)}
+    comparables = posicion[posicion['estado'].isin([MEJOR, IGUAL, PEOR])]
+    cuenta['comparados'] = len(comparables)
+    cuenta['tipica'] = comparables['diferencia_pct'].median() if len(comparables) else None
+    return cuenta
+
+
+def resumen_por_rival(cara):
+    """Por competidor, sumando Internet + TV y Solo Internet: rangos ganados, similares y perdidos, y la diferencia
+    típica de Telecable (promedio de las medianas de cada servicio, pesado por los rangos comparados)."""
+    filas = []
+    for rival, c in cara.groupby('rival', sort=False):
+        filas.append({
+            'rival': rival, MEJOR: int(c[MEJOR].sum()), IGUAL: int(c[IGUAL].sum()), PEOR: int(c[PEOR].sum()),
+            'rangos': int(c['rangos'].sum()),
+            'diferencia_pct': (c['diferencia_pct'] * c['rangos']).sum() / c['rangos'].sum(),
+        })
+    # Primero los que más presionan a Telecable
+    return pd.DataFrame(filas, columns=['rival', MEJOR, IGUAL, PEOR, 'rangos', 'diferencia_pct']).sort_values(
+        'diferencia_pct', ascending=False).reset_index(drop=True)
+
+
 def hallazgos(planes, posicion, base='vigente', principal=PRINCIPAL):
     """Conclusiones en lenguaje simple, cada una marcada como 'bien', 'mal' o 'mercado'."""
     resultado = []

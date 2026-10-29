@@ -256,3 +256,17 @@ def test_cara_a_cara_y_hallazgos():
     assert any('no tiene plan en Internet + TV de 200–299 Mbps' for t in textos)
     assert any(t.startswith('La oferta más agresiva del mercado es Tigo Internet + TV 125 Mbps a ₡18.500 en promoción '
                             '(12 meses, regular ₡20.990)') for t in textos)
+
+
+def test_conteo_y_resumen_por_rival():
+    planes = _planes_resumen()
+    pos = datos.posicion_por_rango(planes)
+    cuenta = datos.conteo_estados(pos)
+    assert (cuenta[datos.MEJOR], cuenta[datos.IGUAL], cuenta[datos.PEOR], cuenta[datos.SIN_PLAN]) == (1, 1, 2, 1)
+    assert cuenta['comparados'] == 4
+
+    rivales = datos.resumen_por_rival(datos.cara_a_cara(planes)).set_index('rival')
+    claro = rivales.loc['Claro']
+    # Claro: Internet + TV (2 rangos, 1 similar y 1 perdido) y Solo Internet (1 rango ganado)
+    assert (claro[datos.MEJOR], claro[datos.IGUAL], claro[datos.PEOR], claro['rangos']) == (1, 1, 1, 3)
+    assert list(rivales.index)[0] == 'Tigo'  # el que más presiona va primero

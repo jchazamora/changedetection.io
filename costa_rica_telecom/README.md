@@ -85,10 +85,11 @@ sistema. Tiene estas páginas:
 - **Resumen ejecutivo** (la de inicio): pensada para que un director la lea en un minuto. Compara el plan más
   barato de Telecable con el más barato de la competencia en cada rango de velocidad, para Internet + TV y Solo
   Internet, y lo dice con un semáforo: verde si Telecable es más barato, amarillo si la diferencia es de 3 % o menos,
-  rojo si la competencia es más barata, gris si Telecable no tiene plan. Arriba, cuántos rangos hay de cada color;
-  luego conclusiones en frases (mayor ventaja, mayor desventaja, rangos sin plan, la oferta más agresiva del mercado,
-  cuántas promociones son largas o permanentes y qué competidor presiona más); el semáforo por velocidad con los
-  precios y la diferencia; y el cara a cara con cada competidor.
+  rojo si la competencia es más barata, gris si Telecable no tiene plan. Arriba, el titular (en cuántos rangos gana
+  cada lado), la diferencia típica de Telecable frente al más barato y cuántos rangos hay de cada color; luego
+  "En una mirada" en tres columnas (dónde estamos bien, dónde estamos mal y cómo se mueve el mercado); el mapa de
+  precios con una tarjeta por velocidad y servicio (diferencia en % y los dos precios); y una tarjeta por competidor
+  con los rangos ganados, similares y perdidos.
 
 - **Precios**: Telecable frente a la competencia, con los precios de los dos JSON. Arriba se eligen los
   competidores, el servicio (Doble Play, Solo Internet o Internet + Telefonía) y si se compara el precio vigente
